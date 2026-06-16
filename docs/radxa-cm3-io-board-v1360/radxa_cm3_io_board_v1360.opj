@@ -1,0 +1,27 @@
+(ExpressProject ""
+  (ProjectVersion "19981106")
+  (ProjectType "PCB")
+  (Folder "Design Resources"
+    (Folder "Library")
+    (File ".\radxa_cm3_io_board_v1360.dsn"
+      (Type "Schematic Design"))
+    (BuildFileAddedOrDeleted "x")
+    (CompileFileAddedOrDeleted "x")
+    (NoModify))
+  (Folder "Outputs")
+  (Folder "Referenced Projects")
+  (GlobalState
+    (FileView
+      (Path "Design Resources")
+      (Path "Design Resources" ".\radxa_cm3_io_board_v1360.dsn")
+      (Path "Design Resources" ".\radxa_cm3_io_board_v1360.dsn" "CM3_IO V1.36")
+      (Path "Design Resources" ".\radxa_cm3_io_board_v1360.dsn" "Design Cache")
+      (Path "Design Resources" "Library")
+      (Select "Design Resources" ".\radxa_cm3_io_board_v1360.dsn"
+         "CM3_IO V1.36"))
+    (HierarchyView)
+    (Doc
+      (Type "COrCapturePMDoc")
+      (Frame
+        (Placement "44 2 3 -1 -1 -8 -31 0 200 0 150"))
+      (Tab 0))))
