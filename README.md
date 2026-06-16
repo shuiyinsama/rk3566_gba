@@ -1,5 +1,18 @@
 # rk3566_gba
 
+RK3566 / Radxa CM3 掌机验证项目。当前第一验证目标是 GBA，第一阶段使用 Radxa CM3 IO Board + 4.3 寸 HDMI 屏完成系统、显示、输入、音频、散热和 GBA 模拟器验证；成品阶段再围绕目标 DSI 屏设计自研 CM3 底板。
+
+## 构建
+
+项目使用 CMake 管理。
+
+```bash
+cmake --preset debug
+cmake --build --preset debug
+ctest --preset debug
+./build/debug/rk3566-gba --help
+```
+
 ## 文档
 
 - [RK3566 多模拟器掌机阶段方案](docs/hardware-selection.md)
