@@ -1,0 +1,25 @@
+waveshare_pin,waveshare_signal,u90074_pin,u90074_signal,adapter_net,notes
+1,GND,6/9/12/15/18/21/22/28/29/32/33,GND,GND,Use nearby ground pins and stitching vias
+2,DSI1_DN1,10,MIPI_DSI_TX1_D1N,DSI_D1_N,2-lane DSI lane 1 negative
+3,DSI1_DP1,11,MIPI_DSI_TX1_D1P,DSI_D1_P,2-lane DSI lane 1 positive
+4,GND,6/9/12/15/18/21/22/28/29/32/33,GND,GND,Ground between differential groups
+5,DSI1_CN,13,MIPI_DSI_TX1_CLKN,DSI_CLK_N,DSI clock negative
+6,DSI1_CP,14,MIPI_DSI_TX1_CLKP,DSI_CLK_P,DSI clock positive
+7,GND,6/9/12/15/18/21/22/28/29/32/33,GND,GND,Ground between differential groups
+8,DSI1_DN0,7,MIPI_DSI_TX1_D0N,DSI_D0_N,2-lane DSI lane 0 negative
+9,DSI1_DP0,8,MIPI_DSI_TX1_D0P,DSI_D0_P,2-lane DSI lane 0 positive
+10,GND,6/9/12/15/18/21/22/28/29/32/33,GND,GND,Ground between differential groups
+11,SCL0,27,I2C2_SCL_LCD,I2C_SCL_LCD,Touch/control I2C clock
+12,SDA0,26,I2C2_SDA_LCD,I2C_SDA_LCD,Touch/control I2C data
+13,GND,6/9/12/15/18/21/22/28/29/32/33,GND,GND,Power return
+14,3V3,30/31,VCC_LCD_MIPI_2,VCC_3V3_LCD,LCD 3.3 V power
+15,3V3,30/31,VCC_LCD_MIPI_2,VCC_3V3_LCD,LCD 3.3 V power
+NC,,16,MIPI_DSI_TX1_D2N,NC_DSI_D2_N,Unused because Waveshare panel is 2-lane
+NC,,17,MIPI_DSI_TX1_D2P,NC_DSI_D2_P,Unused because Waveshare panel is 2-lane
+NC,,19,MIPI_DSI_TX1_D3N,NC_DSI_D3_N,Unused because Waveshare panel is 2-lane
+NC,,20,MIPI_DSI_TX1_D3P,NC_DSI_D3_P,Unused because Waveshare panel is 2-lane
+NC,,23,TP_RST_LCD,NC_TP_RST,Do not connect in first adapter revision
+NC,,24,VCC_TP,NC_VCC_TP,Do not short to VCC_3V3_LCD before confirming rail design
+NC,,25,TP_INT_LCD,NC_TP_INT,Do not connect in first adapter revision
+NC,,34/35,VCC_LEDK2,NC_LEDK,Panel backlight is handled through Waveshare DSI board
+NC,,38/39,VCC_LEDA2,NC_LEDA,Panel backlight is handled through Waveshare DSI board

@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "filename": "u90074-to-waveshare-15pin-dsi.kicad_pro",
+    "version": 1
+  },
+  "text_variables": {},
+  "board": {
+    "design_settings": {
+      "defaults": {}
+    }
+  },
+  "schematic": {
+    "legacy_lib_dir": "",
+    "legacy_lib_list": []
+  }
+}
+
