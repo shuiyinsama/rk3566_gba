@@ -1,267 +1,199 @@
-# RK3566 + 800x480 DSI 屏 GBA 掌机选型文档
+# RK3566 多模拟器掌机阶段方案
 
-## 1. 项目背景
+## 1. 项目定位
 
-前期项目基于 ESP32-S3 + RGB LCD 实现 Game Boy 形态掌机验证。新方案希望切换到 RK3566 平台，使用 Linux 生态承载 GBA 模拟器，并以 800x480 DSI 电容触摸屏作为主要显示输出，目标是开发一台更接近可用掌机体验的 GBA 模拟设备。
+本项目不再只按 GBA 模拟器掌机规划，而是以 Radxa CM3 / RK3566 核心板为基础，验证一台 Linux 多模拟器掌机的可行性。
 
-当前验证阶段拟使用：
+目标平台：
 
-- 核心板：Radxa CM3 / RK3566 核心板
-- 开发底板：Radxa CM3 IO Board
-- 显示屏：Waveshare 4inch DSI LCD，480x800 竖屏，横屏使用时旋转为 800x480
-- 模拟目标：Game Boy Advance
+- 核心板：Radxa CM3 / RK3566，后续成品也计划沿用。
+- 第一阶段底板：Radxa CM3 IO Board，仅作为开发验证平台。
+- 第一阶段屏幕：4.3 寸 HDMI 触摸屏，优先 800x480。
+- 成品阶段屏幕：重新评估 4.3 寸或 5 寸 DSI 屏，并在自研底板上直接集成屏幕接口。
 
-说明：用户口述的 “Radxa M3” 本文按 Radxa CM3 理解。正式采购和设计前需再次核对实际板卡丝印、料号、版本和接口定义。
+当前重点不是先攻克 DSI 屏点亮，而是先验证 RK3566 是否值得继续作为掌机主控。
 
-## 2. 选型结论
+## 2. 性能边界判断
 
-推荐以 RK3566 + Linux + mGBA/RetroArch 作为 GBA 掌机主方案。RK3566 的 CPU/GPU/内存资源相较 ESP32-S3 有明显余量，适合运行成熟 GBA 模拟器、音视频同步、存档、菜单、手柄输入映射和后续 UI。
+RK3566 适合做轻中量级复古模拟掌机，但不适合把 3DS 作为核心目标。
 
-Waveshare 4inch DSI LCD 的硬件分辨率是 480x800 竖屏，横屏使用时可旋转为 800x480。这个横屏形态对 GBA 非常友好：GBA 原生分辨率为 240x160，按 3 倍整数缩放后为 720x480，刚好占满 480 垂直像素，左右各留 40 像素黑边，可获得清晰、无纵向拉伸的显示效果。
+推荐目标分层：
 
-结合 CM3 IO Board V1.36 原理图和 CM3 V1.3 pinout，IO Board 已经引出两组 MIPI LCD 接口：`LCD1` 为 31pin FPC、连接 `MIPI_DSI_TX0`；`U90074` 为 39pin LCD 接口、连接 `MIPI_DSI_TX1` 并带触摸 I2C/TP 控制信号。但 Waveshare 树莓派 DSI 屏不一定能直接接到这两个接口上即用，仍需要确认屏幕 pinout、lane 数、供电、背光、触摸和设备树适配。
+| 平台 | 预期 |
+| --- | --- |
+| GBA / GBC / GB / NES / FC / MD / SFC | 主要目标，预期稳定 |
+| PS1 | 主要目标，预期稳定 |
+| CPS / Neo Geo / 常见街机 | 主要目标，需按核心和游戏验证 |
+| N64 | 可尝试，兼容性和性能分游戏 |
+| PSP | 可尝试，建议按 1x 分辨率和游戏列表验证 |
+| Dreamcast | 可尝试，部分游戏可玩 |
+| 3DS | 不建议作为设计目标 |
+| PS2 / GameCube / Wii / Switch | 不建议作为设计目标 |
 
-## 3. 核心需求
+PSP 可以作为探索目标，但需要接受部分游戏降帧、跳帧或单独调参。3DS 对 CPU/GPU 压力明显高于 RK3566 的舒适区，不建议为了 3DS 改变硬件路线。
 
-### 3.1 功能需求
+## 3. 阶段路线
 
-- 稳定运行 GBA 模拟器，目标 60 FPS。
-- 支持 800x480 屏幕输出，优先整数缩放。
-- 支持方向键、A/B/L/R、Start、Select、Menu 等实体按键。
-- 支持音频输出，后续支持扬声器和耳机。
-- 支持游戏 ROM 选择、即时存档、普通存档、亮度/音量调节。
-- 后续支持电池供电、电量检测、休眠/关机管理。
+### 3.1 阶段一：HDMI 验证平台
 
-### 3.2 开发阶段需求
+使用 Radxa CM3 IO Board + 4.3 寸 HDMI 屏完成软件和体验验证。
 
-- 快速验证 RK3566 上的 GBA 模拟性能。
-- 快速验证 800x480 屏幕显示链路。
-- 快速验证输入、音频、存储和散热边界。
-- 尽量复用成熟 Linux 软件栈，减少从底层重写模拟器和图形栈的风险。
+推荐屏幕：
 
-## 4. 主控平台选型
+- Waveshare 4.3inch HDMI LCD (B)，800x480，电容触摸。
+- 同类 4.3 寸 800x480 HDMI + USB HID 触摸屏。
+- 若需要更大的调试空间，可用 5 寸 800x480 HDMI 屏。
 
-### 4.1 推荐型号：RK3566
+阶段一不要求 DSI 屏点亮，也不要求设计转接板。
 
-RK3566 是四核 Arm Cortex-A55 SoC，定位嵌入式 Linux 和多媒体应用，适合掌机类项目作为主控平台。相较 ESP32-S3，它的优势主要在：
+验证重点：
 
-- CPU 性能足以支撑成熟 GBA 模拟器。
-- 可运行 Linux，方便使用 SDL2、DRM/KMS、ALSA、evdev、RetroArch 等生态。
-- 支持 eMMC、SD、USB、MIPI DSI、eDP、HDMI、I2S、GPIO 等外设。
-- 后续可扩展 Wi-Fi、蓝牙、前端 UI、文件管理和 OTA。
+- 系统镜像、启动、存储稳定性。
+- RetroArch、mGBA、DuckStation/PCSX、PPSSPP 等模拟器运行情况。
+- PSP 游戏实际帧率、音频同步、延迟和发热。
+- USB 手柄或临时按键输入映射。
+- 音频输出、音量控制、耳机/扬声器方案方向。
+- 屏幕尺寸、分辨率、横屏 UI 和前端体验。
+- 长时间运行温度和功耗。
 
-### 4.2 Radxa CM3 核心板适配性
+阶段一的目标是回答一个问题：RK3566 + Linux 这条路线是否值得进入成品板设计。
 
-Radxa CM3 使用 RK3566，提供不同内存/eMMC配置，并采用核心板 + 底板方式开发。它适合当前阶段原因如下：
+### 3.2 阶段二：成品形态定义
 
-- 开发门槛低于自研 RK3566 主板。
-- 官方资料、镜像和社区经验较多。
-- 可先在 IO Board 上验证系统、模拟器、输入、存储和音频。
-- 后续可基于 CM3 连接器设计专用掌机底板。
+在阶段一确认性能边界后，再定义成品掌机规格。
 
-### 4.3 风险与限制
+需要确定：
 
-- CM3 IO Board 已暴露 MIPI DSI，但接口不是树莓派标准 15pin DSI 形态，接 Waveshare 树莓派 DSI 屏大概率需要转接板。
-- DSI 屏需要设备树、面板初始化序列、触摸 I2C、背光 PWM/GPIO 等适配。
-- Linux 图形栈选择会影响启动速度、延迟和调试复杂度。
-- RK3566 长时间满载运行需要关注散热。
+- 最终重点平台：GBA/PS1 为主，还是加入 PSP 作为重要目标。
+- 屏幕尺寸：4.3 寸优先，5 寸作为大掌机备选。
+- 屏幕分辨率：800x480 优先，必要时评估 720p。
+- 输入布局：方向键、ABXY、L1/R1、L2/R2、Start/Select、Home/Menu、音量键。
+- 是否需要模拟摇杆。
+- 电池容量、续航目标、散热结构。
+- 外壳尺寸和屏幕 FPC 位置。
 
-## 5. 显示屏选型
+### 3.3 阶段三：自研 CM3 掌机底板
 
-### 5.1 推荐方向：480x800 DSI IPS 电容屏，横屏旋转使用
+成品阶段不建议继续迁就 CM3 IO Board 的 `LCD1` 或 `U90074` 连接器形态。应直接围绕最终屏幕和结构画自研底板。
 
-当前 Waveshare 4inch DSI LCD 是 480x800 竖屏。用于掌机时建议横屏安装或软件旋转为 800x480，这仍是本项目适配 GBA 的优选分辨率：
+自研底板建议集成：
 
-- GBA 原生 240x160，3 倍整数缩放为 720x480。
-- 垂直方向正好铺满屏幕，无需非整数缩放。
-- 左右黑边较小，画面观感接近掌机。
-- 800x480 对 RK3566 压力很低，UI 和模拟器输出都容易处理。
+- Radxa CM3 连接器。
+- 目标 DSI 屏 FPC 座。
+- 触摸 I2C、RST、INT。
+- 背光电源、PWM 和 enable 控制。
+- GPIO 按键或按键矩阵。
+- I2S codec、功放、扬声器和耳机接口。
+- 电池充放电、电量计、电源路径管理。
+- USB-C 供电、调试和数据。
+- microSD 或 eMMC 使用策略。
+- 散热片、螺丝柱和结构固定点。
 
-### 5.2 Waveshare 树莓派 DSI 屏适配点
+这样成品机不会有独立 DSI 转接小板，屏幕 FPC 可以直接插到底板上。
 
-Waveshare 树莓派生态 DSI 屏通常集成：
+## 4. 屏幕策略
 
-- IPS LCD 面板。
-- MIPI DSI 显示接口。
-- 电容触摸，通常通过 I2C/USB 或屏幕配套方式接入。
-- 背光控制。
-- 面向 Raspberry Pi 的线缆和软件说明。
+### 4.1 第一阶段 HDMI 屏
 
-这些特性适合快速验证显示效果，但对非树莓派平台存在如下适配工作：
+第一阶段用 HDMI 屏是为了减少变量。HDMI 屏只负责显示和临时触摸，不代表最终产品形态。
 
-- 确认 DSI lane 数、供电电压、连接器 pinout。
-- 确认触摸接口接入方式。
-- 编写或移植 Linux panel/bridge 驱动配置。
-- 修改设备树，添加 panel、backlight、touch、pinctrl、regulator。
-- 验证开机阶段是否能点亮背光和输出图像。
+购买建议：
 
-### 5.3 当前开发组合的关键兼容性判断
+- 优先 4.3 寸，800x480。
+- 优先电容触摸。
+- 触摸必须走 USB HID，避免依赖 Raspberry Pi GPIO/SPI 的触摸方案。
+- 供电尽量为 5V USB，方便调试。
+- 不必追求高分辨率或 AMOLED。
 
-当前组合 “Radxa CM3 + Radxa CM3 IO Board + Waveshare 4inch DSI LCD” 具备 DSI 验证基础，但不能直连，需要转接板。CM3 IO Board V1.36 的 DSI 相关接口如下：
+### 4.2 成品阶段 DSI 屏
 
-- `LCD1`：31pin FPC，`MIPI_DSI_TX0`，4-lane DSI，带 LEDA/LEDK 和 LCD 电源，但未直接集成触摸 I2C/TP 控制脚。
-- `U90074`：39pin LCD 接口，`MIPI_DSI_TX1`，4-lane DSI，带 `I2C2_SCL_LCD`、`I2C2_SDA_LCD`、`TP_INT_LCD`、`TP_RST_LCD` 和触摸电源。
+成品阶段再选 DSI 屏会更合理，因为自研底板可以直接按屏幕规格书设计接口。
 
-建议按以下顺序确认：
+优先规格：
 
-1. Waveshare 屏幕为 15pin、2-lane DSI：D0/D1/CLK、I2C、3.3V、GND。
-2. 优先规划 `U90074 39pin -> Waveshare 15pin DSI` 转接验证板。
-3. 转接时只接 TX1 的 D0/D1/CLK、`I2C2_SCL_LCD`、`I2C2_SDA_LCD`、`VCC_LCD_MIPI_2` 和 GND。
-4. `U90074` 的 D2/D3、TP_RST_LCD、TP_INT_LCD、VCC_TP、LEDA/LEDK 暂不接。
-5. 软件侧同步准备 DSI panel、backlight、Goodix touch、显示旋转的设备树适配。
+- 4.3 寸 800x480 横屏 DSI 触摸屏。
+- 5 寸 800x480 DSI 触摸屏作为大尺寸备选。
+- 资料必须齐全：FPC pinout、供电需求、背光参数、触摸芯片、初始化序列或 Linux/RK356x 参考。
 
-## 6. 软件方案选型
+建议优先考虑：
 
-### 6.1 操作系统
+- Waveshare 43H-800480-IPS-CT / QLED-CT。
+- Waveshare 4.3inch DSI LCD。
+- Waveshare 50H-800480-IPS-CT，若接受更大整机。
 
-推荐优先级：
+不建议：
 
-1. Radxa 官方 Debian / Ubuntu 镜像：适合快速 bring-up 和调试。
-2. Buildroot：适合后续做极简掌机系统，启动快、体积小。
-3. Yocto：适合产品化和长期维护，但前期投入较高。
+- SPI 小屏，刷新率和延迟不适合。
+- 只提供 Raspberry Pi overlay、没有 pinout 或初始化资料的屏。
+- 为 3DS 做双屏或特殊比例屏幕。
 
-当前阶段建议使用官方 Debian/Ubuntu 镜像，先验证硬件链路和模拟器性能。待功能稳定后，再评估是否切到 Buildroot。
+## 5. 当前 CM3 IO Board 的角色
 
-### 6.2 模拟器
+Radxa CM3 IO Board 只作为第一阶段验证底板。
 
-推荐优先级：
+它适合：
 
-1. mGBA：GBA 兼容性好，跨平台成熟，适合独立运行或集成前端。
-2. RetroArch + mGBA core：配置、手柄映射、滤镜、菜单、存档体验完整。
-3. gpSP：性能开销低，但兼容性和维护性通常不如 mGBA。
+- 启动系统。
+- 验证 HDMI 输出。
+- 验证 USB 输入和存储。
+- 验证网络、音频、功耗和散热。
+- 作为后续 DSI 资料分析参考。
 
-当前阶段建议先使用 RetroArch + mGBA core 快速验证体验；产品化阶段可再评估独立 mGBA + 自研轻量 UI。
+它不适合：
 
-### 6.3 图形输出
+- 直接作为成品掌机主板。
+- 强行围绕现有 `LCD1` / `U90074` 连接器选择最终屏幕。
+- 在第一阶段投入大量 DSI 转接板调试成本。
 
-推荐路径：
+已有 DSI 分析仍然有价值，但应作为成品底板设计前的接口参考，而不是阶段一的主线任务。
 
-- 开发验证：X11/Wayland 桌面环境下运行 RetroArch，便于调试。
-- 掌机化：SDL2 + DRM/KMS 或 RetroArch KMS/DRM 输出，减少桌面环境开销。
-- 最终目标：开机直接进入前端或模拟器菜单。
+## 6. 第一阶段推荐 BOM
 
-### 6.4 输入方案
+| 模块 | 推荐 |
+| --- | --- |
+| 核心板 | Radxa CM3 / RK3566 |
+| 验证底板 | Radxa CM3 IO Board |
+| 屏幕 | Waveshare 4.3inch HDMI LCD (B) 或同类 4.3 寸 800x480 HDMI USB 触摸屏 |
+| 输入 | USB 手柄、键盘，后续可临时接 GPIO 按键 |
+| 存储 | microSD 或 eMMC |
+| 音频 | 第一阶段优先 HDMI 音频输出或 USB 声卡；成品阶段再设计 I2S codec、功放、扬声器和耳机口 |
+| 电源 | 稳定 5V/USB-C 或开发板推荐供电 |
+| 散热 | 小散热片，必要时加风扇做压力测试 |
 
-开发阶段可使用 USB 手柄或键盘验证按键映射。掌机阶段建议使用实体按键接入 GPIO，并通过 Linux input 子系统上报为标准 evdev 事件。
+## 7. 第一阶段完成标准
 
-推荐按键：
+阶段一完成时，应至少得到这些结论：
 
-- D-Pad：上、下、左、右
-- 操作键：A、B
-- 肩键：L、R
-- 系统键：Start、Select、Menu/Hotkey
-- 可选：音量 + / -、亮度 + / -、电源键
+- GBA/PS1 是否能稳定运行。
+- PSP 可玩游戏范围和不可接受游戏范围。
+- UI 分辨率和 4.3 寸 800x480 是否舒服。
+- 按键数量和布局是否足够。
+- 音频延迟是否可接受。
+- 满载温度和功耗是否可接受。
+- 是否继续沿用 RK3566 / CM3 进入成品底板设计。
 
-### 6.5 音频方案
+## 8. 后续任务清单
 
-开发阶段优先使用 IO Board 现有音频输出或 USB 声卡。掌机阶段建议选择：
+1. 采购或确认 4.3 寸 HDMI 800x480 USB 触摸屏。
+2. 启动 Radxa 官方镜像，记录内核版本、GPU/DRM/KMS 状态。
+3. 安装并测试 RetroArch、mGBA、PS1 模拟器和 PPSSPP。
+4. 建立游戏测试表，记录帧率、声音、温度、功耗。
+5. 验证 USB HID 触摸和 USB 手柄输入。
+6. 基于测试结果决定是否进入成品底板阶段。
+7. 成品阶段再选择 DSI 屏，并围绕目标屏幕画 CM3 掌机底板。
 
-- I2S codec + 功放 + 扬声器
-- 耳机检测和静音控制
-- 音量按键映射到系统 mixer
+## 9. 文档编码说明
 
-## 7. 方案分阶段验证
+本仓库文档使用 UTF-8 Markdown。Linux、VS Code、GitHub 和大多数现代编辑器都可以直接打开。
 
-### 7.1 阶段一：开发板 bring-up
+如果在 PowerShell 或某些终端里看到中文乱码，通常是终端输出编码问题，不是 Markdown 格式不能在 Linux 使用。建议使用 VS Code、Typora、Obsidian 或支持 UTF-8 的 Markdown 查看器打开。
 
-目标：确认 RK3566 系统和模拟器性能。
-
-验证项：
-
-- Radxa 官方镜像启动。
-- eMMC/SD 存储稳定。
-- USB 键盘/手柄输入正常。
-- HDMI/eDP 或可用显示输出正常。
-- RetroArch + mGBA 能稳定运行 GBA ROM。
-- 720x480 整数缩放显示模式可用。
-- 音频输出无明显爆音和延迟。
-
-### 7.2 阶段二：800x480 DSI 屏适配
-
-目标：确认目标屏幕能作为主显示输出。
-
-验证项：
-
-- DSI 物理连接方案明确。
-- 设备树中 panel、backlight、touch 配置完成。
-- 内核能识别面板和触摸。
-- 控制台或 DRM/KMS 能输出到 DSI。
-- 背光可调。
-- 触摸输入稳定。
-- 横屏方向、刷新率、色彩和亮度符合预期。
-
-### 7.3 阶段三：掌机输入和外设
-
-目标：形成接近最终产品的交互体验。
-
-验证项：
-
-- GPIO 按键通过 input 子系统上报。
-- RetroArch/mGBA 按键映射稳定。
-- Menu/Hotkey 可进入存档、退出和设置。
-- 音量和亮度可独立调整。
-- 长时间运行温度可接受。
-
-### 7.4 阶段四：专用底板设计
-
-目标：从开发板组合转向掌机硬件形态。
-
-建议专用底板包含：
-
-- CM3 连接器。
-- 800x480 DSI 屏接口。
-- 触摸接口。
-- 背光电源和 PWM 控制。
-- 按键矩阵或 GPIO 按键。
-- I2S codec、功放、扬声器、耳机接口。
-- 电池充放电、电量计、5V/3.3V/1.8V 电源。
-- USB-C 供电和调试。
-- 散热结构固定点。
-
-## 8. 初步 BOM
-
-| 模块 | 推荐选型 | 当前用途 | 风险 |
-| --- | --- | --- | --- |
-| 主控 | Radxa CM3 / RK3566 | Linux + GBA 模拟器 | 需确认具体内存/eMMC版本 |
-| 开发底板 | Radxa CM3 IO Board | 系统 bring-up、外设验证、DSI 接口验证 | 已引出 DSI，但连接器不是树莓派 DSI 标准形态 |
-| 屏幕 | Waveshare 4inch DSI LCD，480x800 竖屏 | 目标显示验证 | 需转接到 U90074；RK3566 侧需移植 panel/Goodix 触摸设备树 |
-| 输入 | USB 键盘/手柄，后续 GPIO 按键 | 开发和最终按键 | GPIO 去抖和键位映射 |
-| 音频 | IO Board 音频/USB 声卡，后续 I2S codec | 声音验证 | 延迟、底噪、功放选型 |
-| 存储 | eMMC 或 microSD | 系统和 ROM 存储 | 可靠性、读写寿命 |
-| 电源 | 开发阶段 DC/USB-C，后续锂电池 | 供电 | 峰值电流、续航、散热 |
-
-## 9. 关键风险
-
-1. DSI 屏与 CM3 IO Board 的物理连接器和电气 pinout 兼容性不明确。
-2. Waveshare 屏幕面向 Raspberry Pi，非 Pi 平台可能缺少现成设备树。
-3. RK3566 Linux 显示栈有多种路径，早期需要控制变量，先用最容易点亮的输出验证模拟器。
-4. 掌机产品化需要重新设计电源、音频、按键和结构，开发板组合只能验证核心方案。
-5. 若使用桌面系统运行模拟器，启动速度和资源占用可能不符合最终掌机体验。
-
-## 10. 推荐决策
-
-当前阶段建议采用“两条线并行”的验证策略：
-
-- 主线 A：用 Radxa CM3 + IO Board + HDMI/eDP 显示先跑通系统、模拟器、输入和音频，证明 RK3566 运行 GBA 的体验。
-- 主线 B：基于 `LCD1`/`U90074` 单独攻关 800x480 DSI 屏的硬件连接和设备树适配，确认后再合并到掌机方案。
-
-如果确认 CM3 IO Board 无法直接接 Waveshare DSI 屏，不建议在开发板阶段投入过多机械转接成本。更合理的路径是先用可用显示输出完成软件验证，同时画一块小型 DSI 转接板或为下一版专用底板预留正确的 DSI、触摸和背光接口。
-
-## 11. 下一步清单
-
-- 获取 Radxa CM3 和 CM3 IO Board 的具体版本、原理图和接口定义。
-- 获取 Waveshare 目标屏幕的准确型号、原理图或接口 pinout。
-- 启动 Radxa 官方镜像，记录内核版本、设备树、显示节点。
-- 安装 RetroArch/mGBA，验证 GBA ROM 帧率、音频和输入。
-- 设计 `U90074 39pin -> Waveshare 15pin DSI` 转接验证板。
-- 若 DSI 转接路径可行，开始 RK3566 panel/Goodix 触摸设备树适配；若不经济，规划专用底板或替换屏幕方案。
-
-## 12. 参考资料
+## 10. 参考资料
 
 - Radxa CM3 产品页：https://radxa.com/products/cm/cm3/
 - Radxa CM3 IO Board 产品页：https://radxa.com/products/cm/cm3-io-board/
-- Waveshare 5inch DSI LCD Wiki：https://www.waveshare.com/wiki/5inch_DSI_LCD
-- Waveshare 7inch DSI LCD Wiki：https://www.waveshare.com/wiki/7inch_DSI_LCD
+- Radxa CM3 DSI 接口文档：https://docs.radxa.com/en/som/cm/cm3/getting-started/interface-usage/mipi-dsi
 - mGBA 项目：https://mgba.io/
+- PPSSPP 项目：https://www.ppsspp.org/
 - 本仓库 DSI 接口分析：[Radxa CM3 IO Board DSI 接口分析](cm3-io-dsi-analysis.md)
 - 本仓库屏幕适配分析：[Waveshare 4inch DSI LCD 适配分析](waveshare-4inch-dsi-lcd-analysis.md)

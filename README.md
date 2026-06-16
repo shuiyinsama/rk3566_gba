@@ -2,7 +2,16 @@
 
 ## 文档
 
-- [RK3566 + 800x480 DSI 屏 GBA 掌机选型文档](docs/hardware-selection.md)
+- [RK3566 多模拟器掌机阶段方案](docs/hardware-selection.md)
+- [阶段一 HDMI 验证清单](docs/phase1-hdmi-validation.md)
 - [Radxa CM3 IO Board DSI 接口分析](docs/cm3-io-dsi-analysis.md)
 - [Waveshare 4inch DSI LCD 适配分析](docs/waveshare-4inch-dsi-lcd-analysis.md)
 - [U90074 转 Waveshare 15-pin DSI 转接小板草案](hardware/u90074_to_waveshare_15pin_dsi/README.md)
+
+## 当前路线
+
+第一阶段使用 Radxa CM3 IO Board + 4.3 寸 HDMI 屏验证系统、模拟器性能、输入、音频、功耗和散热。DSI 屏和自研掌机底板放到第二阶段，在确认 RK3566 性能边界后再选型。
+
+## 文档编码
+
+本仓库 Markdown 文档使用 UTF-8。若在 PowerShell 或部分终端看到中文乱码，优先用 VS Code、Typora、Obsidian 或其它 UTF-8 Markdown 查看器打开。
