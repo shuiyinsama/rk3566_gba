@@ -29,3 +29,4 @@ include(CTest)
 if(BUILD_TESTING)
   add_test(NAME rk3566-gba-help COMMAND rk3566-gba --help)
 endif()
+ 
