@@ -11,12 +11,17 @@ cmake --preset debug
 cmake --build --preset debug
 ctest --preset debug
 ./build/debug/rk3566-gba --help
+./build/debug/rk3566-gba --checklist
+./build/debug/rk3566-gba --system-commands
+./build/debug/rk3566-gba --new-record records/phase1-001.md
 ```
 
 ## 文档
 
 - [RK3566 多模拟器掌机阶段方案](docs/hardware-selection.md)
 - [阶段一 HDMI 验证清单](docs/phase1-hdmi-validation.md)
+- [阶段一测试记录模板](docs/phase1-test-record-template.md)
+- [阶段一验证工具](docs/validation-helper.md)
 - [Radxa CM3 IO Board DSI 接口分析](docs/cm3-io-dsi-analysis.md)
 - [Waveshare 4inch DSI LCD 适配分析](docs/waveshare-4inch-dsi-lcd-analysis.md)
 - [U90074 转 Waveshare 15-pin DSI 转接小板草案](hardware/u90074_to_waveshare_15pin_dsi/README.md)
