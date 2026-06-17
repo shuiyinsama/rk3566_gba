@@ -13,10 +13,17 @@ ctest --preset debug
 ./build/debug/rk3566-gba --help
 ```
 
+第一阶段上板后先跑平台探测：
+
+```bash
+./build/debug/rk3566-gba probe
+```
+
 ## 文档
 
 - [RK3566 多模拟器掌机阶段方案](docs/hardware-selection.md)
 - [阶段一 HDMI 验证清单](docs/phase1-hdmi-validation.md)
+- [开发记录](docs/development-log.md)
 - [Radxa CM3 IO Board DSI 接口分析](docs/cm3-io-dsi-analysis.md)
 - [Waveshare 4inch DSI LCD 适配分析](docs/waveshare-4inch-dsi-lcd-analysis.md)
 - [U90074 转 Waveshare 15-pin DSI 转接小板草案](hardware/u90074_to_waveshare_15pin_dsi/README.md)

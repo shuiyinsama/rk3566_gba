@@ -62,7 +62,10 @@
 uname -a
 cat /etc/os-release
 ls /sys/class/drm
+./build/debug/rk3566-gba probe
 ```
+
+优先运行 `rk3566-gba probe`。这个命令的目的不是调屏驱动，而是先确认 HDMI、音频、输入和温度节点是否被系统正确识别。若 HDMI 屏没有自动列出 800x480，再进入显示模式配置。
 
 ## 5. GBA 优先验证
 

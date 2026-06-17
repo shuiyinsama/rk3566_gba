@@ -1,10 +1,12 @@
+#include "platform_probe.h"
+
 #include <iostream>
 #include <string_view>
 
 namespace {
 
 void print_usage(std::ostream& out, std::string_view program_name) {
-  out << "Usage: " << program_name << " [--help] [--version]\n"
+  out << "Usage: " << program_name << " [--help] [--version] [probe]\n"
       << "\n"
       << "rk3566-gba is the validation entry point for the RK3566 handheld project.\n"
       << "The first software milestone is GBA bring-up on Radxa CM3 with an HDMI\n"
@@ -15,7 +17,10 @@ void print_usage(std::ostream& out, std::string_view program_name) {
       << "  1. System boot, HDMI output, audio, input, and thermal checks\n"
       << "  2. GBA emulator bring-up and 60 FPS stability\n"
       << "  3. PS1 and lightweight retro cores\n"
-      << "  4. PSP exploratory testing\n";
+      << "  4. PSP exploratory testing\n"
+      << "\n"
+      << "Commands:\n"
+      << "  probe    Print Linux display/audio/input/thermal baseline information\n";
 }
 
 }  // namespace
@@ -32,6 +37,9 @@ int main(int argc, char* argv[]) {
     if (arg == "--version") {
       std::cout << "rk3566-gba 0.1.0\n";
       return 0;
+    }
+    if (arg == "probe") {
+      return run_platform_probe(std::cout);
     }
 
     std::cerr << "Unknown argument: " << arg << "\n\n";
