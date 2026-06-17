@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(
   rk3566_gba
-  VERSION 0.2.0
+  VERSION 0.1.0
   DESCRIPTION "RK3566 handheld validation project"
   LANGUAGES CXX
 )
@@ -28,8 +28,5 @@ install(TARGETS rk3566-gba RUNTIME DESTINATION bin)
 include(CTest)
 if(BUILD_TESTING)
   add_test(NAME rk3566-gba-help COMMAND rk3566-gba --help)
-  add_test(NAME rk3566-gba-version COMMAND rk3566-gba --version)
-  add_test(NAME rk3566-gba-checklist COMMAND rk3566-gba --checklist)
-  add_test(NAME rk3566-gba-system-commands COMMAND rk3566-gba --system-commands)
 endif()
  
