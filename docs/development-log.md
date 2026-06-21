@@ -106,3 +106,20 @@
 - 在 Windows PowerShell 中运行 `python tools\radxa_dev_gui.py`。
 - 首次连接板子时，点击“初始化 SSH 免密终端”并输入一次板子密码。
 - 后续可点击“一键全流程”完成 WSL 构建、同步、板端构建和板端验证。
+
+修复：
+
+- 修复 WSL 命令经 Windows 参数层传递时 `$tool` 被错误展开的问题。
+- 过滤 WSL 启动阶段无关的本地化乱码提示。
+- 修复 `ssh-keygen -N ""` 空参数在 PowerShell/WSL 多层引号中丢失的问题。
+- 同步源码时增加板端 `rsync` 检测；板端缺少 `rsync` 时自动使用 `tar` 兜底同步。
+- 板端构建前清理 `build/debug`，避免 CMake cache 残留 Windows/WSL 路径导致源目录不匹配。
+
+验证：
+
+- SSH 免密初始化成功，公钥已安装到 `radxa@192.168.8.43`。
+- WSL 构建测试通过，`ctest --preset debug` 三项测试全部通过。
+- 板端缺少 `rsync`，已通过 `tar` 兜底完成源码同步。
+- 板端构建测试通过，`ctest --preset debug` 三项测试全部通过。
+- 板端 `probe` 识别到 `card0-HDMI-A-1: connected`，modes 包含 `800x480`。
+- 板端 `gba-check` 可运行；当前未安装 mGBA、RetroArch 和 mGBA libretro core，且未设置 `RK3566_GBA_ROM`。

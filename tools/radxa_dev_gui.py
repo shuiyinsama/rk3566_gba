@@ -22,6 +22,13 @@ from tkinter import ttk
 APP_TITLE = "Radxa CM3 GBA 开发助手"
 CONFIG_FILE = ".radxa-dev-gui.json"
 SSH_OPTIONS = "-o BatchMode=yes -o ConnectTimeout=8"
+WSL_NOISE_MARKERS = (
+    "WSL",
+    "localhost",
+    "NAT",
+    "wsl",
+)
+CREATE_NEW_CONSOLE = getattr(subprocess, "CREATE_NEW_CONSOLE", 0)
 
 
 def repo_root() -> Path:
@@ -47,7 +54,7 @@ def windows_path_to_wsl(path: Path) -> str:
 
     resolved = path.resolve()
     if not resolved.drive:
-      return str(resolved)
+        return str(resolved)
 
     drive = resolved.drive.rstrip(":").lower()
     tail = str(resolved)[len(resolved.drive) :].replace("\\", "/")
@@ -249,7 +256,8 @@ class RadxaDevGui:
         """把当前源码同步到 Radxa 板子。
 
         说明：
-        - 使用 rsync，可以只传变更文件。
+        - 优先使用 rsync，可以只传变更文件。
+        - 如果板子端没有 rsync，自动改用 tar 兜底同步。
         - 排除 build/，避免把本机 x86_64 构建产物传到 ARM 板子。
         - 排除 .git/ 和本地 GUI 配置，减少无关文件。
         """
@@ -265,7 +273,7 @@ class RadxaDevGui:
         if not self._validate_board_config():
             return
         self.save_config()
-        remote = "cmake --preset debug && cmake --build --preset debug && ctest --preset debug"
+        remote = "rm -rf build/debug && cmake --preset debug && cmake --build --preset debug && ctest --preset debug"
         self._run_commands([GuiCommand("板端构建测试", self._ssh_command(remote))])
 
     def board_probe(self) -> None:
@@ -291,7 +299,7 @@ class RadxaDevGui:
 
         顺序：
         1. WSL 本机构建测试，先确认源码没有明显问题。
-        2. rsync 同步源码到板子。
+        2. 同步源码到板子，优先 rsync，板端缺少 rsync 时自动使用 tar 兜底。
         3. 板子本机重新构建测试，确保架构和系统库匹配。
         4. 板端 probe，记录 HDMI/音频/输入/温度基线。
         5. 板端 gba-check，确认模拟器和 ROM 准备情况。
@@ -309,7 +317,10 @@ class RadxaDevGui:
                 f"cd {quoted(self.repo_wsl)} && cmake --preset debug && cmake --build --preset debug && ctest --preset debug",
             ),
             GuiCommand("同步源码到板子", self._sync_command()),
-            GuiCommand("板端构建测试", self._ssh_command("cmake --preset debug && cmake --build --preset debug && ctest --preset debug")),
+            GuiCommand(
+                "板端构建测试",
+                self._ssh_command("rm -rf build/debug && cmake --preset debug && cmake --build --preset debug && ctest --preset debug"),
+            ),
             GuiCommand("板端 probe", self._ssh_command("./build/debug/rk3566-gba probe")),
             GuiCommand("板端 gba-check", self._ssh_command(f"{gba_prefix}./build/debug/rk3566-gba gba-check")),
         ]
@@ -318,8 +329,15 @@ class RadxaDevGui:
     def open_wsl_terminal(self) -> None:
         """打开一个交互式 WSL 终端，并进入仓库目录。"""
 
-        bash = f"cd {quoted(self.repo_wsl)} && exec bash"
-        self._open_powershell(f"wsl bash -lc {quoted(bash)}")
+        script = self._write_wsl_script(
+            "wsl-terminal",
+            f"""
+            cd {quoted(self.repo_wsl)}
+            rm -f "$0"
+            exec bash
+            """,
+        )
+        self._open_console(["wsl", "bash", script], "WSL 终端")
 
     def open_ssh_key_terminal(self) -> None:
         """打开交互终端，初始化 SSH 免密登录。
@@ -332,20 +350,40 @@ class RadxaDevGui:
         if not self._validate_board_config():
             return
         target = self._target()
-        bash = (
-            "test -f ~/.ssh/id_ed25519 || ssh-keygen -t ed25519 -N '' -f ~/.ssh/id_ed25519; "
-            f"ssh-copy-id {quoted(target)}; "
-            "echo; echo 'SSH 免密初始化结束。可以回到开发助手窗口继续点按钮。'; "
-            "exec bash"
+        script = self._write_wsl_script(
+            "ssh-init",
+            f"""
+            target={quoted(target)}
+
+            mkdir -p ~/.ssh
+            chmod 700 ~/.ssh
+
+            if [ ! -f ~/.ssh/id_ed25519 ]; then
+              echo "未找到 ~/.ssh/id_ed25519，正在生成免密码 SSH key..."
+              ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519 -C "rk3566_gba_dev"
+            else
+              echo "已存在 ~/.ssh/id_ed25519，跳过 SSH key 生成。"
+            fi
+
+            echo
+            echo "即将把公钥安装到 $target。"
+            echo "如果提示 password，请输入 Radxa 板子的登录密码。"
+            ssh-copy-id "$target"
+
+            echo
+            echo "SSH 免密初始化结束。可以回到开发助手窗口继续点按钮。"
+            rm -f "$0"
+            exec bash
+            """,
         )
-        self._open_powershell(f"wsl bash -lc {quoted(bash)}")
+        self._open_console(["wsl", "bash", script], "SSH 免密初始化终端")
 
     def open_board_ssh_terminal(self) -> None:
         """打开一个交互式 SSH 终端，方便临时查看板子状态。"""
 
         if not self._validate_board_config():
             return
-        self._open_powershell(f"wsl ssh {quoted(self._target())}")
+        self._open_console(["wsl", "ssh", self._target()], "板子 SSH 终端")
 
     def clear_log(self) -> None:
         """清空日志窗口。"""
@@ -377,15 +415,40 @@ class RadxaDevGui:
         return self.remote_dir.get().strip()
 
     def _sync_command(self) -> str:
-        """生成 rsync 同步命令。"""
+        """生成源码同步命令。
 
-        remote_arg = f"{self._target()}:{self._remote_dir().rstrip('/')}/"
-        return (
-            f"cd {quoted(self.repo_wsl)} && "
-            f"rsync -av --delete "
-            f"--exclude build/ --exclude .git/ --exclude {quoted(CONFIG_FILE)} "
-            f"-e {quoted('ssh ' + SSH_OPTIONS)} "
-            f"./ {quoted(remote_arg)}"
+        目的：
+        - 板端有 rsync 时走 rsync，速度快，并且支持删除远端旧文件。
+        - 板端没有 rsync 时走 tar 兜底，不需要先手动安装板端工具。
+        """
+
+        target = self._target()
+        remote_dir = self._remote_dir().rstrip("/")
+        remote_dir_for_shell = quoted_remote_path(remote_dir)
+        remote_arg = f"{target}:{remote_dir}/"
+        ssh_transport = "ssh " + SSH_OPTIONS
+        remote_mkdir = f"mkdir -p {remote_dir_for_shell}"
+        remote_extract = f"mkdir -p {remote_dir_for_shell} && cd {remote_dir_for_shell} && tar -xf -"
+        excludes = (
+            "--exclude build/ "
+            "--exclude .git/ "
+            f"--exclude {quoted(CONFIG_FILE)} "
+            "--exclude '.radxa-dev-gui-*.sh'"
+        )
+
+        return "\n".join(
+            [
+                f"cd {quoted(self.repo_wsl)}",
+                f"if ssh {SSH_OPTIONS} {quoted(target)} 'command -v rsync >/dev/null 2>&1'; then",
+                '  echo "板端已安装 rsync，使用 rsync 增量同步。"',
+                f"  rsync -av --delete {excludes} -e {quoted(ssh_transport)} ./ {quoted(remote_arg)}",
+                "else",
+                '  echo "板端未找到 rsync，改用 tar 兜底同步。"',
+                '  echo "提示：tar 兜底不会删除板端已经存在但本地已移除的旧文件；安装 rsync 后会自动恢复增量同步。"',
+                f"  ssh {SSH_OPTIONS} {quoted(target)} {quoted(remote_mkdir)}",
+                f"  tar {excludes} -cf - . | ssh {SSH_OPTIONS} {quoted(target)} {quoted(remote_extract)}",
+                "fi",
+            ]
         )
 
     def _ssh_command(self, remote_command: str) -> str:
@@ -417,21 +480,26 @@ class RadxaDevGui:
         try:
             for command in commands:
                 self.output_queue.put(f"\n[{time.strftime('%H:%M:%S')}] {command.title}\n")
-                self.output_queue.put(f"$ wsl bash -lc {command.bash}\n")
+                self.output_queue.put("$ wsl bash -se\n")
+                self.output_queue.put(command.bash + "\n")
 
                 process = subprocess.Popen(
-                    ["wsl", "bash", "-lc", command.bash],
+                    ["wsl", "bash", "-se"],
                     cwd=str(self.repo),
+                    stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
-                    text=True,
-                    encoding="utf-8",
-                    errors="replace",
                 )
 
+                assert process.stdin is not None
                 assert process.stdout is not None
-                for line in process.stdout:
-                    self.output_queue.put(line)
+                process.stdin.write((command.bash + "\n").encode("utf-8"))
+                process.stdin.close()
+
+                for raw_line in process.stdout:
+                    line = raw_line.decode("utf-8", errors="replace")
+                    if not self._is_wsl_startup_noise(line):
+                        self.output_queue.put(line)
 
                 return_code = process.wait()
                 self.output_queue.put(f"[退出码] {return_code}\n")
@@ -445,13 +513,42 @@ class RadxaDevGui:
         finally:
             self.worker_running = False
 
-    def _open_powershell(self, command: str) -> None:
-        """打开一个新的 PowerShell 窗口执行交互式命令。"""
+    def _is_wsl_startup_noise(self, line: str) -> bool:
+        """过滤 WSL 启动时偶发的乱码警告。
 
-        subprocess.Popen(
-            ["powershell", "-NoExit", "-Command", command],
-            cwd=str(self.repo),
-        )
+        截图里的乱码来自 wsl.exe 启动阶段的本地化提示，内容和本项目无关。
+        这些提示经常夹杂 NUL 字符或替换字符，放进日志会误导判断。
+        """
+
+        if "\x00" in line or "�" in line:
+            return True
+        return False
+
+    def _write_wsl_script(self, name: str, body: str) -> str:
+        """写入一个临时 WSL bash 脚本并返回 WSL 路径。
+
+        交互式命令不再通过 `wsl bash -lc "..."` 传递，避免 PowerShell、wsl.exe
+        和 bash 三层引号把 `ssh-keygen -N ""` 这样的空参数吃掉。
+        """
+
+        script_path = self.repo / f".radxa-dev-gui-{name}.sh"
+        lines = ["#!/usr/bin/env bash", "set -e"]
+        lines.extend(line.strip() for line in body.strip().splitlines())
+        script_path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+        return windows_path_to_wsl(script_path)
+
+    def _open_console(self, args: list[str], title: str) -> None:
+        """打开一个新的控制台窗口执行交互式命令。"""
+
+        try:
+            subprocess.Popen(
+                args,
+                cwd=str(self.repo),
+                creationflags=CREATE_NEW_CONSOLE,
+            )
+            self._append_log(f"已打开{title}: {' '.join(args)}\n")
+        except OSError as exc:
+            messagebox.showerror(APP_TITLE, f"打开{title}失败：{exc}")
 
     def _append_log(self, text: str) -> None:
         """向日志窗口追加文本并滚动到底部。"""
