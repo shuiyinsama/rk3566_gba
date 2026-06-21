@@ -55,3 +55,20 @@
 - 识别到 HDMI 音频 `rockchip-hdmi` 和板载音频 `rockchip-rk817`。
 - 暂未识别到 USB 触摸输入，GBA 第一阶段验证暂不依赖触摸。
 - 当前温度约 `58 C`，后续跑模拟器时需要继续观察散热。
+
+### GBA 实测准备
+
+目的：把 HDMI 基线验证后的下一步固定为可重复的 GBA 实测流程。
+
+变更：
+
+- 新增 `rk3566-gba gba-check` 命令，用于检查 mGBA、RetroArch 和测试 ROM 环境。
+- 新增 `docs/gba-validation.md`，记录 GBA 首轮 30 分钟稳定性测试模板。
+- 更新 `README.md` 和 `docs/phase1-hdmi-validation.md`，加入 GBA 实测入口。
+
+验证：
+
+- 使用本机 MinGW g++ 临时编译 `src/main.cpp`、`src/platform_probe.cpp` 和 `src/gba_validation.cpp`。
+- 运行 `rk3566-gba --help`。
+- 运行 `rk3566-gba gba-check`。
+- 运行 `rk3566-gba probe`。

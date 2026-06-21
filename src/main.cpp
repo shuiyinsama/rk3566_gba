@@ -1,3 +1,4 @@
+#include "gba_validation.h"
 #include "platform_probe.h"
 
 #include <iostream>
@@ -5,8 +6,10 @@
 
 namespace {
 
+// 打印命令行帮助。
+// 新增 `gba-check` 后，帮助文本同时说明平台探测和 GBA 实测准备两个入口。
 void print_usage(std::ostream& out, std::string_view program_name) {
-  out << "Usage: " << program_name << " [--help] [--version] [probe]\n"
+  out << "Usage: " << program_name << " [--help] [--version] [probe|gba-check]\n"
       << "\n"
       << "rk3566-gba is the validation entry point for the RK3566 handheld project.\n"
       << "The first software milestone is GBA bring-up on Radxa CM3 with an HDMI\n"
@@ -20,7 +23,8 @@ void print_usage(std::ostream& out, std::string_view program_name) {
       << "  4. PSP exploratory testing\n"
       << "\n"
       << "Commands:\n"
-      << "  probe    Print Linux display/audio/input/thermal baseline information\n";
+      << "  probe      Print Linux display/audio/input/thermal baseline information\n"
+      << "  gba-check  Check GBA emulator readiness and print the runtime test flow\n";
 }
 
 }  // namespace
@@ -40,6 +44,12 @@ int main(int argc, char* argv[]) {
     }
     if (arg == "probe") {
       return run_platform_probe(std::cout);
+    }
+    // GBA 实测准备入口。
+    // 用法：`rk3566-gba gba-check`。
+    // 目的：在跑 mGBA/RetroArch 前先检查工具、core 和测试 ROM 路径是否准备好。
+    if (arg == "gba-check") {
+      return run_gba_validation_check(std::cout);
     }
 
     std::cerr << "Unknown argument: " << arg << "\n\n";

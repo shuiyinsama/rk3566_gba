@@ -19,10 +19,17 @@ ctest --preset debug
 ./build/debug/rk3566-gba probe
 ```
 
+确认 HDMI、音频、输入和温度基线后，再进入 GBA 实测准备：
+
+```bash
+./build/debug/rk3566-gba gba-check
+```
+
 ## 文档
 
 - [RK3566 多模拟器掌机阶段方案](docs/hardware-selection.md)
 - [阶段一 HDMI 验证清单](docs/phase1-hdmi-validation.md)
+- [GBA 实测流程与记录](docs/gba-validation.md)
 - [开发记录](docs/development-log.md)
 - [Radxa CM3 IO Board DSI 接口分析](docs/cm3-io-dsi-analysis.md)
 - [Waveshare 4inch DSI LCD 适配分析](docs/waveshare-4inch-dsi-lcd-analysis.md)

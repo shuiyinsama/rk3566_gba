@@ -12,6 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(rk3566-gba
+  src/gba_validation.cpp
   src/main.cpp
   src/platform_probe.cpp
 )
@@ -29,6 +30,7 @@ install(TARGETS rk3566-gba RUNTIME DESTINATION bin)
 include(CTest)
 if(BUILD_TESTING)
   add_test(NAME rk3566-gba-help COMMAND rk3566-gba --help)
+  add_test(NAME rk3566-gba-check COMMAND rk3566-gba gba-check)
   add_test(NAME rk3566-gba-probe COMMAND rk3566-gba probe)
 endif()
  

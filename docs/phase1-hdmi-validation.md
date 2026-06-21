@@ -63,6 +63,7 @@ uname -a
 cat /etc/os-release
 ls /sys/class/drm
 ./build/debug/rk3566-gba probe
+./build/debug/rk3566-gba gba-check
 ```
 
 优先运行 `rk3566-gba probe`。这个命令的目的不是调屏驱动，而是先确认 HDMI、音频、输入和温度节点是否被系统正确识别。若 HDMI 屏没有自动列出 800x480，再进入显示模式配置。
@@ -80,6 +81,8 @@ GBA 验证重点：
 - USB 手柄输入延迟是否可接受。
 - 存档、即时存档、退出和菜单操作是否顺手。
 - 连续运行 30 分钟后的温度和稳定性。
+
+记录模板见 [GBA 实测流程与记录](gba-validation.md)。
 
 ## 6. 其它模拟器验证
 
