@@ -40,3 +40,18 @@
 - 探测 `/proc/asound/cards` 的 ALSA 音频设备。
 - 探测 `/sys/class/input` 的输入设备名称。
 - 探测 `/sys/class/thermal` 的温度节点。
+
+## 2026-06-21
+
+### Radxa CM3 IO Board HDMI 基线验证
+
+目的：确认第一阶段 HDMI 屏验证路线是否可行。
+
+结果：
+
+- 在 Radxa CM3 IO Board 上完成 CMake 配置、构建和运行。
+- `rk3566-gba probe` 识别到 `card0-HDMI-A-1: connected`。
+- HDMI modes 中出现 `800x480`，4.3 寸 HDMI 屏已可作为阶段一验证屏。
+- 识别到 HDMI 音频 `rockchip-hdmi` 和板载音频 `rockchip-rk817`。
+- 暂未识别到 USB 触摸输入，GBA 第一阶段验证暂不依赖触摸。
+- 当前温度约 `58 C`，后续跑模拟器时需要继续观察散热。
