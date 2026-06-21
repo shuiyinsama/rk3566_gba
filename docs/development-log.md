@@ -114,6 +114,7 @@
 - 修复 `ssh-keygen -N ""` 空参数在 PowerShell/WSL 多层引号中丢失的问题。
 - 同步源码时增加板端 `rsync` 检测；板端缺少 `rsync` 时自动使用 `tar` 兜底同步。
 - 板端构建前清理 `build/debug`，避免 CMake cache 残留 Windows/WSL 路径导致源目录不匹配。
+- 新增“板端安装 GBA 工具”按钮，在交互终端中安装 `mgba-qt`、`retroarch` 和 `libretro-mgba`。
 
 验证：
 

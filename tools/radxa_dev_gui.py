@@ -178,6 +178,7 @@ class RadxaDevGui:
         terminal_buttons.pack(fill=X, pady=(8, 0))
         ttk.Button(terminal_buttons, text="打开 WSL 终端", command=self.open_wsl_terminal).pack(side=LEFT, padx=(0, 6))
         ttk.Button(terminal_buttons, text="初始化 SSH 免密终端", command=self.open_ssh_key_terminal).pack(side=LEFT, padx=6)
+        ttk.Button(terminal_buttons, text="板端安装 GBA 工具", command=self.open_gba_tools_install_terminal).pack(side=LEFT, padx=6)
         ttk.Button(terminal_buttons, text="打开板子 SSH 终端", command=self.open_board_ssh_terminal).pack(side=LEFT, padx=6)
         ttk.Button(terminal_buttons, text="清空日志", command=self.clear_log).pack(side=RIGHT)
 
@@ -293,6 +294,28 @@ class RadxaDevGui:
         rom = self.rom_path.get().strip()
         prefix = f"RK3566_GBA_ROM={quoted_remote_path(rom)} " if rom else ""
         self._run_commands([GuiCommand("板端 gba-check", self._ssh_command(f"{prefix}./build/debug/rk3566-gba gba-check"))])
+
+    def open_gba_tools_install_terminal(self) -> None:
+        """打开交互终端，在板子上安装 GBA 验证工具。
+
+        sudo 需要用户输入板子密码，不能放在后台按钮里静默执行。
+        这个终端会安装：
+        - mgba-qt：第一轮 GBA 单项验证优先使用。
+        - retroarch：后续多模拟器前端验证使用。
+        - libretro-mgba：RetroArch 的 mGBA core。
+        """
+
+        if not self._validate_board_config():
+            return
+
+        remote_command = (
+            "sudo apt update && "
+            "sudo apt install -y mgba-qt retroarch libretro-mgba; "
+            "echo; "
+            "echo 'GBA 工具安装步骤结束。回到开发助手窗口点击 板端 gba-check 复查。'; "
+            "exec bash"
+        )
+        self._open_console(["wsl", "ssh", "-t", self._target(), remote_command], "板端 GBA 工具安装终端")
 
     def full_flow(self) -> None:
         """执行推荐的一键流程。

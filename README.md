@@ -29,6 +29,8 @@ python tools\radxa_dev_gui.py
 
 同步源码时优先使用板端 `rsync`。如果板端没有安装 `rsync`，开发助手会自动改用 `tar` 兜底同步；兜底同步可以继续推进验证，但不会删除板端已存在而本地已移除的旧文件。
 
+进入 GBA 实测前，点“板端安装 GBA 工具”安装 `mgba-qt`、`retroarch` 和 `libretro-mgba`。这个步骤需要在弹出的终端里输入一次板子 sudo 密码。
+
 第一阶段上板后先跑平台探测：
 
 ```bash
