@@ -72,3 +72,37 @@
 - 运行 `rk3566-gba --help`。
 - 运行 `rk3566-gba gba-check`。
 - 运行 `rk3566-gba probe`。
+
+### WSL 构建环境确认
+
+目的：确认 Windows 开发机上是否需要切到 Linux 环境构建。
+
+结论：
+
+- 当前 Windows 原生环境缺少 `Unix Makefiles` 所需的构建程序，`cmake --preset debug` 无法直接完成。
+- WSL Ubuntu 22.04 中已具备 `cmake`、`g++`、`make` 和 `ninja`。
+- 不需要 SSH 到 WSL；可直接通过 `wsl` 命令在本机 Linux 环境构建。
+- 后续 SSH 主要用于连接 Radxa CM3 板端运行 `probe`、`gba-check` 和模拟器实测。
+
+验证：
+
+- `cmake --preset debug`
+- `cmake --build --preset debug`
+- `ctest --preset debug`
+
+### 图形化开发助手
+
+目的：减少手动输入 WSL、rsync 和 SSH 命令的重复操作。
+
+变更：
+
+- 新增 `tools/radxa_dev_gui.py`，提供 Windows Python/Tkinter 图形窗口。
+- 支持检查 WSL 工具、WSL 构建测试、同步源码到 Radxa、板端构建测试、板端 `probe` 和板端 `gba-check`。
+- 支持保存本地板端配置到 `.radxa-dev-gui.json`。
+- 更新 `.gitignore`，忽略 `.radxa-dev-gui.json`。
+
+使用：
+
+- 在 Windows PowerShell 中运行 `python tools\radxa_dev_gui.py`。
+- 首次连接板子时，点击“初始化 SSH 免密终端”并输入一次板子密码。
+- 后续可点击“一键全流程”完成 WSL 构建、同步、板端构建和板端验证。

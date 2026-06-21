@@ -6,12 +6,26 @@ RK3566 / Radxa CM3 掌机验证项目。当前第一验证目标是 GBA，第一
 
 项目使用 CMake 管理。
 
+Windows 开发机建议通过 WSL Ubuntu 构建，不需要 SSH 到 WSL。SSH 主要用于后续连接 Radxa CM3 板端做实际硬件验证。
+
 ```bash
 cmake --preset debug
 cmake --build --preset debug
 ctest --preset debug
 ./build/debug/rk3566-gba --help
 ```
+
+若之前在 Windows 原生路径下生成过 `build/debug`，切到 WSL 后可能遇到 CMake cache 路径不匹配。删除 `build/debug` 后重新运行 `cmake --preset debug` 即可。
+
+## 开发助手
+
+Windows 上可以启动 Python 图形窗口，把 WSL 构建、同步源码、板端构建和板端验证做成按钮：
+
+```powershell
+python tools\radxa_dev_gui.py
+```
+
+首次连接板子时，先填写用户名和 IP，然后点“初始化 SSH 免密终端”，按提示输入一次板子密码。之后常用流程可以点“一键全流程”。
 
 第一阶段上板后先跑平台探测：
 

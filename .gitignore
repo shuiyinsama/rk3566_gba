@@ -8,3 +8,6 @@ compile_commands.json
 *.user
 *.swp
 *.swo
+__pycache__/
+*.pyc
+.radxa-dev-gui.json
