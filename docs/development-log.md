@@ -124,3 +124,39 @@
 - 板端构建测试通过，`ctest --preset debug` 三项测试全部通过。
 - 板端 `probe` 识别到 `card0-HDMI-A-1: connected`，modes 包含 `800x480`。
 - 板端 `gba-check` 可运行；当前未安装 mGBA、RetroArch 和 mGBA libretro core，且未设置 `RK3566_GBA_ROM`。
+
+## 2026-06-22
+
+### GBA 模拟器首轮跑通
+
+目的：确认 Radxa CM3 IO Board + 4.3 寸 HDMI 屏是否能实际运行 GBA 模拟器，而不仅是通过平台探测。
+
+环境：
+
+- 板端系统：Debian GNU/Linux 12 (bookworm)，`arm64`。
+- 内核：`6.1.84-18-rk2410-nocsf`。
+- 图形环境：KDE Plasma / X11，实际显示号为 `:1`。
+- HDMI 输出：`HDMI-1`，已从 `1920x1080` 临时切换到 `800x480`。
+
+操作：
+
+- 手动安装 `mgba-qt`、`retroarch` 和 `libretro-mgba`。
+- 准备测试 ROM：`/home/radxa/roms/gba/pokemon-green.gba`。
+- 运行 `rk3566-gba gba-check`，确认 mGBA Qt、RetroArch、mGBA libretro core 和测试 ROM 均已识别。
+- 使用 `DISPLAY=:1 XAUTHORITY=/run/user/1000/gdm/Xauthority` 将 mGBA Qt 启动到 HDMI 屏。
+
+结果：
+
+- `mgba-qt` 已安装，路径为 `/usr/games/mgba-qt`。
+- `retroarch` 已安装，路径为 `/usr/bin/retroarch`。
+- `mgba_libretro.so` 已安装，路径为 `/usr/lib/aarch64-linux-gnu/libretro/mgba_libretro.so`。
+- 测试 ROM 被系统识别为 GBA ROM，标题为 `POKEMON EMER`，大小约 `16 MB`。
+- mGBA Qt 成功打开游戏画面，标题栏显示约 `59.5 fps`。
+- 800x480 模式下桌面和模拟器窗口可正常显示，初步确认 GBA 运行无根本障碍。
+
+注意：
+
+- 从 SSH 启动图形程序时，不能使用 `DISPLAY=:0`；当前桌面显示号是 `:1`。
+- 终端中前台运行 `mgba-qt` 会一直占用命令行，属于正常现象；需要后台启动或关闭窗口后才会返回。
+- 目前仍是桌面窗口方式运行，尚未进入真正掌机化体验。
+- 后续需要开发或固化一键启动流程：切换 800x480、设置显示环境、启动 mGBA、全屏或无边框显示、记录温度和帧率。
