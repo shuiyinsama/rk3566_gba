@@ -43,6 +43,12 @@ python tools\radxa_dev_gui.py
 ./build/debug/rk3566-gba gba-check
 ```
 
+GBA 模拟器环境准备好后，可以用一键启动脚本切换 HDMI 分辨率并启动 mGBA：
+
+```bash
+bash scripts/launch-gba.sh /home/radxa/roms/gba/pokemon-green.gba
+```
+
 ## 文档
 
 - [RK3566 多模拟器掌机阶段方案](docs/hardware-selection.md)

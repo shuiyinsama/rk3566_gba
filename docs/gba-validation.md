@@ -36,6 +36,14 @@
 - 音频优先使用 HDMI 音频；若有问题，再切到板载音频或 USB 声卡。
 - 单次连续运行 30 分钟，中途不要频繁切换设置。
 
+一键启动脚本：
+
+```bash
+bash scripts/launch-gba.sh /home/radxa/roms/gba/pokemon-green.gba
+```
+
+脚本会自动寻找 X11 显示号、设置 `XAUTHORITY`、切换 HDMI 到 800x480，并用 mGBA 3x 缩放启动 ROM。
+
 ## 4. 单次测试记录模板
 
 | 项目 | 记录 |

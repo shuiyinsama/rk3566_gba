@@ -160,3 +160,32 @@
 - 终端中前台运行 `mgba-qt` 会一直占用命令行，属于正常现象；需要后台启动或关闭窗口后才会返回。
 - 目前仍是桌面窗口方式运行，尚未进入真正掌机化体验。
 - 后续需要开发或固化一键启动流程：切换 800x480、设置显示环境、启动 mGBA、全屏或无边框显示、记录温度和帧率。
+
+### GBA 一键启动脚本
+
+目的：把手动验证时反复输入的显示环境、分辨率切换和 mGBA 启动命令固化为用户层脚本。
+
+变更：
+
+- 新增 `scripts/launch-gba.sh`。
+- 自动检测 `/tmp/.X11-unix/X*`，避免把 `DISPLAY=:0` 或 `DISPLAY=:1` 写死。
+- 自动选择 GDM 的 `XAUTHORITY` 文件。
+- 自动从 `xrandr` 读取已连接显示输出，并切换到 `800x480`。
+- 默认使用 mGBA 3x 缩放和全屏启动 ROM。
+- 支持 `--windowed`、`--background`、`--mode`、`--scale` 和 `--keep-existing` 参数。
+
+用法：
+
+```bash
+bash scripts/launch-gba.sh /home/radxa/roms/gba/pokemon-green.gba
+```
+
+验证：
+
+- 本地 WSL 执行 `bash -n scripts/launch-gba.sh` 通过。
+- 同步到板端后执行 `bash -n scripts/launch-gba.sh` 通过。
+- `bash scripts/launch-gba.sh --help` 可正常输出帮助。
+- 执行 `bash scripts/launch-gba.sh --background /home/radxa/roms/gba/pokemon-green.gba` 成功。
+- 脚本自动识别 `DISPLAY=:0`、`XAUTHORITY=/run/user/1000/gdm/Xauthority` 和输出 `HDMI-1`。
+- 脚本成功将 HDMI 输出切换到 `800x480`。
+- mGBA 以 `mgba-qt -f --scale 3 /home/radxa/roms/gba/pokemon-green.gba` 启动并保持运行。
