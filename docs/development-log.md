@@ -177,15 +177,15 @@
 用法：
 
 ```bash
-bash scripts/launch-gba.sh /home/radxa/roms/gba/pokemon-green.gba
+bash ~/rk3566_gba/scripts/launch-gba.sh /home/radxa/roms/gba/pokemon-green.gba
 ```
 
 验证：
 
 - 本地 WSL 执行 `bash -n scripts/launch-gba.sh` 通过。
-- 同步到板端后执行 `bash -n scripts/launch-gba.sh` 通过。
-- `bash scripts/launch-gba.sh --help` 可正常输出帮助。
-- 执行 `bash scripts/launch-gba.sh --background /home/radxa/roms/gba/pokemon-green.gba` 成功。
+- 同步到板端后执行 `bash -n ~/rk3566_gba/scripts/launch-gba.sh` 通过。
+- `bash ~/rk3566_gba/scripts/launch-gba.sh --help` 可正常输出帮助。
+- 执行 `bash ~/rk3566_gba/scripts/launch-gba.sh --background /home/radxa/roms/gba/pokemon-green.gba` 成功。
 - 脚本自动识别 `DISPLAY=:0`、`XAUTHORITY=/run/user/1000/gdm/Xauthority` 和输出 `HDMI-1`。
 - 脚本成功将 HDMI 输出切换到 `800x480`。
 - mGBA 以 `mgba-qt -f --scale 3 /home/radxa/roms/gba/pokemon-green.gba` 启动并保持运行。

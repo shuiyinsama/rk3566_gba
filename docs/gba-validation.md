@@ -39,7 +39,7 @@
 一键启动脚本：
 
 ```bash
-bash scripts/launch-gba.sh /home/radxa/roms/gba/pokemon-green.gba
+bash ~/rk3566_gba/scripts/launch-gba.sh /home/radxa/roms/gba/pokemon-green.gba
 ```
 
 脚本会自动寻找 X11 显示号、设置 `XAUTHORITY`、切换 HDMI 到 800x480，并用 mGBA 3x 缩放启动 ROM。

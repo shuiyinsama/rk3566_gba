@@ -5,9 +5,9 @@ set -euo pipefail
 # 目的：把手动输入的显示环境、分辨率切换和 mGBA 启动命令固定下来。
 # 位置：这是用户层脚本，不是内核驱动、设备树或系统服务。
 # 用法：
-#   bash scripts/launch-gba.sh /home/radxa/roms/gba/game.gba
-#   RK3566_GBA_ROM=/home/radxa/roms/gba/game.gba bash scripts/launch-gba.sh
-#   bash scripts/launch-gba.sh --windowed /home/radxa/roms/gba/game.gba
+#   bash ~/rk3566_gba/scripts/launch-gba.sh /home/radxa/roms/gba/game.gba
+#   RK3566_GBA_ROM=/home/radxa/roms/gba/game.gba bash ~/rk3566_gba/scripts/launch-gba.sh
+#   bash ~/rk3566_gba/scripts/launch-gba.sh --windowed /home/radxa/roms/gba/game.gba
 
 MODE="800x480"
 SCALE="3"
@@ -30,9 +30,9 @@ Options:
   -h, --help       Show this help
 
 Examples:
-  bash scripts/launch-gba.sh /home/radxa/roms/gba/pokemon-green.gba
-  RK3566_GBA_ROM=/home/radxa/roms/gba/pokemon-green.gba bash scripts/launch-gba.sh
-  bash scripts/launch-gba.sh --windowed /home/radxa/roms/gba/pokemon-green.gba
+  bash ~/rk3566_gba/scripts/launch-gba.sh /home/radxa/roms/gba/pokemon-green.gba
+  RK3566_GBA_ROM=/home/radxa/roms/gba/pokemon-green.gba bash ~/rk3566_gba/scripts/launch-gba.sh
+  bash ~/rk3566_gba/scripts/launch-gba.sh --windowed /home/radxa/roms/gba/pokemon-green.gba
 EOF
 }
 

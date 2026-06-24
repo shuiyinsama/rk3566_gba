@@ -46,7 +46,7 @@ python tools\radxa_dev_gui.py
 GBA 模拟器环境准备好后，可以用一键启动脚本切换 HDMI 分辨率并启动 mGBA：
 
 ```bash
-bash scripts/launch-gba.sh /home/radxa/roms/gba/pokemon-green.gba
+bash ~/rk3566_gba/scripts/launch-gba.sh /home/radxa/roms/gba/pokemon-green.gba
 ```
 
 ## 文档
