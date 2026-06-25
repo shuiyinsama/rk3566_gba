@@ -189,3 +189,102 @@ bash ~/rk3566_gba/scripts/launch-gba.sh /home/radxa/roms/gba/pokemon-green.gba
 - 脚本自动识别 `DISPLAY=:0`、`XAUTHORITY=/run/user/1000/gdm/Xauthority` 和输出 `HDMI-1`。
 - 脚本成功将 HDMI 输出切换到 `800x480`。
 - mGBA 以 `mgba-qt -f --scale 3 /home/radxa/roms/gba/pokemon-green.gba` 启动并保持运行。
+
+## 2026-06-25
+
+### GBA 稳定性监控脚本
+
+目的：在模拟器已经能跑起来之后，开始把 30 分钟稳定性记录做成可重复流程，并且让电脑端可以实时看到板端采样信息。
+
+变更：
+
+- 新增 `scripts/monitor-gba.sh`，在板端采集温度、CPU、CPU 频率、内存、系统负载、mGBA 进程状态、HDMI 当前模式和可选窗口标题。
+- 新增 `tools/monitor_gba_from_pc.py`，在 Windows 开发机上通过 WSL SSH 执行板端监控脚本，并把输出实时保存到电脑端 `logs/`。
+- 更新 `tools/radxa_dev_gui.py`，增加“GBA 稳定性监控”按钮；填写 ROM 路径时会先后台启动 mGBA，再监控 30 分钟。
+- 更新 `README.md` 和 `docs/gba-validation.md`，补充电脑端监控命令、日志位置和单次测试记录字段。
+- 更新 `.gitignore`，忽略本地 `logs/` 监控输出。
+
+用法：
+
+```powershell
+python tools\monitor_gba_from_pc.py --launch --rom /home/radxa/roms/gba/pokemon-green.gba --duration 1800 --interval 10
+```
+
+如果 mGBA 已经在板端运行，可以去掉 `--launch` 只做记录：
+
+```powershell
+python tools\monitor_gba_from_pc.py --duration 1800 --interval 10
+```
+
+### GBA 30 分钟稳定性记录
+
+目的：在一键启动脚本和监控脚本可用后，完成第一轮正式 GBA 连续运行记录。
+
+操作：
+
+- 使用 `tools/monitor_gba_from_pc.py` 通过 WSL SSH 启动板端 mGBA。
+- 运行板端 `scripts/monitor-gba.sh`，采样间隔 `10s`，计划时长 `1800s`。
+- 监控结束后将板端 `.log` 和 `.csv` 拉回电脑 `logs/` 目录。
+- 记录结束后停止 `mgba-qt`，避免板子继续空跑发热。
+
+结果：
+
+- 共采集 175 个样本。
+- 温度范围为 `71.1 C` 到 `73.9 C`。
+- 15 分钟温度为 `71.7 C`。
+- 结束点 `1798s` 温度为 `71.7 C`。
+- CPU 频率全程记录为 `1800 MHz`。
+- mGBA 进程全程存在，未崩溃。
+- HDMI 模式全程保持 `HDMI-1:800x480`，未恢复到 1920x1080。
+- 本轮没有同步验证音频、输入、菜单、存档和退出体验。
+
+结论：
+
+- GBA 模拟器 30 分钟稳定性基线通过。
+- 后续优先验证 USB 手柄输入、音频路径、退出/重启流程和开机自启动体验。
+
+### 手柄到键盘映射脚本
+
+目的：当前板端内核没有可加载的 `joydev` 模块，无法生成 `/dev/input/js0`；mGBA 也未直接识别 USB 手柄。因此先增加用户层输入映射，把 evdev 手柄事件转换成 mGBA 默认键盘按键。
+
+环境发现：
+
+- 手柄识别为 `Microsoft Xbox Series S|X Controller`。
+- 手柄 evdev 设备为 `/dev/input/event3`。
+- `evtest` 能看到 `BTN_SOUTH` 等按键事件。
+- `sudo modprobe joydev` 失败，当前内核目录中没有 `joydev` 模块。
+- `/dev/uinput` 存在，可以创建用户层虚拟键盘。
+
+变更：
+
+- 新增 `scripts/gamepad-keyboard-bridge.py`。
+- 脚本读取 `/dev/input/eventX`，通过 `/dev/uinput` 创建虚拟键盘。
+- 默认把方向键映射为键盘方向键。
+- 默认把 `BTN_SOUTH` / `BTN_EAST` 映射为 `X` / `Z`，对应 mGBA 常见默认 A/B 键位。
+- 默认把 `BTN_START` / `BTN_SELECT` 映射为 `Enter` / `Backspace`。
+- 支持 `--swap-ab` 调换 A/B 体感。
+- 支持 `--show-events` 打印转换过程，便于手动验证。
+
+用法：
+
+```bash
+sudo python3 ~/rk3566_gba/scripts/gamepad-keyboard-bridge.py --event /dev/input/event3 --show-events
+```
+
+保持映射脚本运行后，再启动 mGBA。若游戏里 A/B 体感相反，可改用：
+
+```bash
+sudo python3 ~/rk3566_gba/scripts/gamepad-keyboard-bridge.py --event /dev/input/event3 --swap-ab --show-events
+```
+
+验证：
+
+- 初次测试时 Xbox 灯未亮且映射脚本没有打印按键事件，判断不是 mGBA 配置问题，而是手柄连接/事件输入状态需要先确认。
+- 重新确认有线连接后，映射脚本可读取 `/dev/input/event3` 并转换成虚拟键盘输入。
+- mGBA 获得焦点后，手柄可以操控 GBA 游戏。
+
+结论：
+
+- USB 手柄输入链路已跑通。
+- 当前可行路线是 `evdev -> /dev/uinput 虚拟键盘 -> mGBA 默认键盘映射`。
+- 后续需要把映射脚本纳入一键启动或系统服务，避免每次手动开两个终端。

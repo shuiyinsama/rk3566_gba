@@ -179,6 +179,7 @@ class RadxaDevGui:
         ttk.Button(terminal_buttons, text="打开 WSL 终端", command=self.open_wsl_terminal).pack(side=LEFT, padx=(0, 6))
         ttk.Button(terminal_buttons, text="初始化 SSH 免密终端", command=self.open_ssh_key_terminal).pack(side=LEFT, padx=6)
         ttk.Button(terminal_buttons, text="板端安装 GBA 工具", command=self.open_gba_tools_install_terminal).pack(side=LEFT, padx=6)
+        ttk.Button(terminal_buttons, text="GBA 稳定性监控", command=self.board_gba_stability_monitor).pack(side=LEFT, padx=6)
         ttk.Button(terminal_buttons, text="打开板子 SSH 终端", command=self.open_board_ssh_terminal).pack(side=LEFT, padx=6)
         ttk.Button(terminal_buttons, text="清空日志", command=self.clear_log).pack(side=RIGHT)
 
@@ -261,6 +262,7 @@ class RadxaDevGui:
         - 如果板子端没有 rsync，自动改用 tar 兜底同步。
         - 排除 build/，避免把本机 x86_64 构建产物传到 ARM 板子。
         - 排除 .git/ 和本地 GUI 配置，减少无关文件。
+        - 排除 logs/，避免把电脑端监控输出同步到板端源码目录。
         """
 
         if not self._validate_board_config():
@@ -294,6 +296,28 @@ class RadxaDevGui:
         rom = self.rom_path.get().strip()
         prefix = f"RK3566_GBA_ROM={quoted_remote_path(rom)} " if rom else ""
         self._run_commands([GuiCommand("板端 gba-check", self._ssh_command(f"{prefix}./build/debug/rk3566-gba gba-check"))])
+
+    def board_gba_stability_monitor(self) -> None:
+        """启动一轮 GBA 稳定性监控。
+
+        如果窗口里填写了 ROM 路径，就先调用一键启动脚本后台启动 mGBA，再监控 30 分钟。
+        如果没有填写 ROM 路径，则只监控当前已经运行的 mGBA 进程，适合你手动启动模拟器后的记录。
+        """
+
+        if not self._validate_board_config():
+            return
+        self.save_config()
+
+        rom = self.rom_path.get().strip()
+        monitor = "bash scripts/monitor-gba.sh --duration 1800 --interval 10 --tag gba-stability"
+        if rom:
+            remote = f"bash scripts/launch-gba.sh --background {quoted_remote_path(rom)} && {monitor}"
+            title = "启动并监控 GBA 30 分钟"
+        else:
+            remote = monitor
+            title = "监控当前 GBA 30 分钟"
+
+        self._run_commands([GuiCommand(title, self._ssh_command(remote))])
 
     def open_gba_tools_install_terminal(self) -> None:
         """打开交互终端，在板子上安装 GBA 验证工具。
@@ -455,6 +479,7 @@ class RadxaDevGui:
         excludes = (
             "--exclude build/ "
             "--exclude .git/ "
+            "--exclude logs/ "
             f"--exclude {quoted(CONFIG_FILE)} "
             "--exclude '.radxa-dev-gui-*.sh'"
         )

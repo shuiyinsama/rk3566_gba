@@ -10,5 +10,6 @@ compile_commands.json
 *.swo
 __pycache__/
 *.pyc
+logs/
 .radxa-dev-gui.json
 .radxa-dev-gui-*.sh
