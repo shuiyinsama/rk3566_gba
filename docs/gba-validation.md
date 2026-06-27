@@ -131,7 +131,64 @@ sudo python3 ~/rk3566_gba/scripts/gamepad-keyboard-bridge.py --event /dev/input/
 | 板端 CSV 日志 |  |
 | 结论 |  |
 
-## 7. 判断标准
+## 7. 音频验证
+
+先运行状态检查：
+
+```bash
+bash ~/rk3566_gba/scripts/audio-check.sh
+```
+
+然后播放测试音：
+
+```bash
+bash ~/rk3566_gba/scripts/audio-check.sh --play
+```
+
+如果默认设备没有声音，根据 `aplay -l` 的输出尝试指定 ALSA 设备：
+
+```bash
+bash ~/rk3566_gba/scripts/audio-check.sh --play --device plughw:0,0
+bash ~/rk3566_gba/scripts/audio-check.sh --play --device plughw:1,0
+```
+
+记录要点：
+
+- HDMI 音频和板载音频是否都出现在 `/proc/asound/cards`。
+- 默认播放设备是否有声音。
+- HDMI 屏是否能直接出声。
+- mGBA 运行时是否有游戏声音。
+- 是否有爆音、断续、延迟或音画不同步。
+- 音量调节是走 KDE 音量、`alsamixer`，还是 mGBA 内部设置。
+
+如果测试音有声音但 mGBA 没声音，问题优先看 mGBA 音频后端和桌面默认输出；如果测试音也没声音，优先看 ALSA/PipeWire 输出设备、屏幕是否支持 HDMI 音频和音量是否静音。
+
+## 8. 退出/重启流程验证
+
+使用会话管理脚本验证 mGBA 是否能稳定退出、重新启动和重启：
+
+```bash
+bash ~/rk3566_gba/scripts/gba-session.sh status
+bash ~/rk3566_gba/scripts/gba-session.sh stop
+bash ~/rk3566_gba/scripts/gba-session.sh status
+bash ~/rk3566_gba/scripts/gba-session.sh start /home/radxa/roms/gba/pokemon-green.gba
+bash ~/rk3566_gba/scripts/gba-session.sh restart /home/radxa/roms/gba/pokemon-green.gba
+```
+
+记录要点：
+
+- `status` 能否正确显示 mGBA 是否在运行。
+- `stop` 后是否还残留 `mgba-qt` 进程。
+- `stop` 是正常退出还是需要 `SIGKILL` 强制结束。
+- `start` 后游戏是否能重新出画面。
+- `restart` 后是否只剩一个 mGBA 进程。
+- 重启后 HDMI 是否仍保持 `800x480`。
+- 重启后音频是否仍然正常。
+- 手柄映射脚本是否还需要重新启动。
+
+这一步通过后，才适合继续做开机自启动或一键掌机模式。
+
+## 9. 判断标准
 
 通过标准：
 
@@ -143,7 +200,7 @@ sudo python3 ~/rk3566_gba/scripts/gamepad-keyboard-bridge.py --event /dev/input/
 
 未通过时优先记录现象，不急着同时更换多个变量。建议一次只调整模拟器、音频路径、缩放方式或散热条件中的一项。
 
-## 8. 通过后的下一步
+## 10. 通过后的下一步
 
 GBA 首轮通过后，再继续：
 
@@ -153,7 +210,7 @@ GBA 首轮通过后，再继续：
 4. 评估 PSP 的可玩边界。
 5. 根据温度和输入体验决定是否进入成品形态定义。
 
-## 9. 首轮记录
+## 11. 首轮记录
 
 | 项目 | 记录 |
 | --- | --- |
@@ -178,7 +235,7 @@ GBA 首轮通过后，再继续：
 | 板端 CSV 日志 | 待补充 |
 | 结论 | mGBA Qt 已成功出画面，GBA 运行路线可行；仍需继续做 30 分钟稳定性、输入、音频和掌机化启动验证。 |
 
-## 10. 30 分钟稳定性记录
+## 12. 30 分钟稳定性记录
 
 | 项目 | 记录 |
 | --- | --- |
@@ -209,7 +266,7 @@ GBA 首轮通过后，再继续：
 | 板端 CSV 日志 | `logs/gba-stability-20260625-120633.csv`，板端原路径 `/home/radxa/rk3566_gba/logs/gba-stability-20260625-120633.csv` |
 | 结论 | GBA 模拟器 30 分钟稳定性基线通过；未出现崩溃、分辨率回退或持续升温。下一轮应验证输入、音频和退出/重启体验。 |
 
-## 11. USB 手柄输入记录
+## 13. USB 手柄输入记录
 
 | 项目 | 记录 |
 | --- | --- |
@@ -224,3 +281,36 @@ GBA 首轮通过后，再继续：
 | 游戏验证 | 映射脚本运行后，手柄可以操控 mGBA 中的 GBA 游戏 |
 | 注意事项 | 如果 Xbox 灯不亮或按键无输出，先重新确认 USB 有线连接和 `evtest /dev/input/event3` 是否仍有事件 |
 | 结论 | 输入验证通过，但当前依赖用户层 evdev 到键盘映射；后续掌机化阶段需要把该映射做成更稳定的启动流程或替换为更合适的输入后端。 |
+
+## 14. 音频验证记录
+
+| 项目 | 记录 |
+| --- | --- |
+| 日期 | 2026-06-27 |
+| 音频框架 | ALSA 默认输出为 PipeWire Media Server |
+| HDMI 音频 | `card 0: rockchiphdmi [rockchip-hdmi]`，设备 `rockchip-hdmi i2s-hifi-0` |
+| 板载音频 | `card 1: rockchiprk817 [rockchip-rk817]`，设备 `dailink-multicodecs rk817-hifi-0` |
+| 默认测试音 | `speaker-test -D default -t sine -f 440 -c 2` 有声音 |
+| HDMI 屏输出 | 可出声 |
+| 板载输出 | 可出声 |
+| mGBA 游戏声音 | 有游戏声音 |
+| 连续性 | 声音连续 |
+| 爆音/断续 | 暂未发现爆音或断续 |
+| 已知问题 | 底噪偏大，当前阶段先记录，不展开优化 |
+| 结论 | GBA 音频链路基本通过；后续成品化阶段再优化底噪、音量路径和默认输出选择。 |
+
+## 15. 退出/重启流程记录
+
+| 项目 | 记录 |
+| --- | --- |
+| 日期 | 2026-06-27 |
+| 验证脚本 | `bash ~/rk3566_gba/scripts/gba-session.sh` |
+| stop 结果 | `SIGTERM` 后 mGBA 在 `0s` 内正常退出 |
+| stop 后进程 | `mgba-qt` 不再运行，无残留进程 |
+| 强制结束 | 未触发 `SIGKILL` |
+| 显示状态 | `HDMI-1 connected primary 800x480+0+0` |
+| start/restart | 正常 |
+| 音频 | 重启后正常 |
+| 手柄映射 | 不需要重新启动映射脚本 |
+| 日志提示 | `/tmp/rk3566-gba-mgba.log not found` 仅表示最近 mGBA 日志不存在，不影响退出流程 |
+| 结论 | 退出、启动和重启流程通过；可以继续推进一键掌机模式或开机自启动验证。 |

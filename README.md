@@ -71,6 +71,24 @@ sudo python3 ~/rk3566_gba/scripts/gamepad-keyboard-bridge.py --event /dev/input/
 
 保持这个终端运行，再启动 mGBA。默认映射为方向键、`X`/`Z`、`Enter`、`Backspace`、`A`/`S`，对应 mGBA 常见默认键位。
 
+音频验证可以先列出板端音频状态，再播放测试音：
+
+```bash
+bash ~/rk3566_gba/scripts/audio-check.sh
+bash ~/rk3566_gba/scripts/audio-check.sh --play
+```
+
+如果默认设备没有声音，再根据 `aplay -l` 中的声卡编号尝试 `--device plughw:X,Y`。
+
+退出和重启验证使用会话管理脚本：
+
+```bash
+bash ~/rk3566_gba/scripts/gba-session.sh status
+bash ~/rk3566_gba/scripts/gba-session.sh stop
+bash ~/rk3566_gba/scripts/gba-session.sh start /home/radxa/roms/gba/pokemon-green.gba
+bash ~/rk3566_gba/scripts/gba-session.sh restart /home/radxa/roms/gba/pokemon-green.gba
+```
+
 ## 文档
 
 - [RK3566 多模拟器掌机阶段方案](docs/hardware-selection.md)

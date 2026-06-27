@@ -288,3 +288,90 @@ sudo python3 ~/rk3566_gba/scripts/gamepad-keyboard-bridge.py --event /dev/input/
 - USB 手柄输入链路已跑通。
 - 当前可行路线是 `evdev -> /dev/uinput 虚拟键盘 -> mGBA 默认键盘映射`。
 - 后续需要把映射脚本纳入一键启动或系统服务，避免每次手动开两个终端。
+
+## 2026-06-27
+
+### 音频验证脚本
+
+目的：在 GBA 运行和输入链路之后，开始验证板端音频路径，优先确认 HDMI 音频和桌面默认输出是否可用。
+
+变更：
+
+- 新增 `scripts/audio-check.sh`。
+- 脚本会列出 `/proc/asound/cards`、`aplay -l`、`aplay -L`、混音控制、`pactl`、`wpctl` 和音频相关进程。
+- 默认只检查状态，不主动播放声音。
+- 传入 `--play` 时播放短测试音，用于人工确认 HDMI 屏或外接音频是否出声。
+- 支持 `--device` 指定 ALSA 设备，例如 `default`、`plughw:0,0`、`plughw:1,0`。
+
+用法：
+
+```bash
+bash ~/rk3566_gba/scripts/audio-check.sh
+bash ~/rk3566_gba/scripts/audio-check.sh --play
+```
+
+如果默认输出没有声音，根据 `aplay -l` 的声卡编号继续尝试：
+
+```bash
+bash ~/rk3566_gba/scripts/audio-check.sh --play --device plughw:0,0
+bash ~/rk3566_gba/scripts/audio-check.sh --play --device plughw:1,0
+```
+
+### 音频链路手动验证
+
+目的：确认当前板端默认音频输出、HDMI 音频、板载音频和 mGBA 游戏声音是否可用。
+
+结果：
+
+- `/proc/asound/cards` 识别到 HDMI 音频 `rockchip-hdmi`。
+- `/proc/asound/cards` 识别到板载音频 `rockchip-rk817`。
+- `aplay -l` 中 `card 0, device 0` 为 HDMI 播放设备。
+- `aplay -l` 中 `card 1, device 0` 为 RK817 板载播放设备。
+- `aplay -L` 显示默认 ALSA 输出当前走 PipeWire Media Server。
+- `speaker-test -D default -t sine -f 440 -c 2` 有声音。
+- HDMI 屏和板载音频输出均可出声。
+- mGBA 中已有游戏声音。
+- 游戏声音连续，暂未发现爆音或断续。
+- 当前底噪偏大，但本阶段先记录，不展开优化。
+
+结论：
+
+- GBA 音频链路基本通过。
+- 后续如果进入成品化，需要继续优化底噪、音量控制、默认输出选择和外放/耳机路径。
+
+### GBA 会话管理脚本
+
+目的：在 GBA 运行、输入和音频可用后，验证 mGBA 是否能稳定退出、重新启动和重启，为后续一键掌机模式做准备。
+
+变更：
+
+- 新增 `scripts/gba-session.sh`。
+- 支持 `status` 查看 mGBA 进程、显示模式和最近日志。
+- 支持 `stop` 先发送 `SIGTERM`，超时后再 `SIGKILL`，避免 mGBA 卡住导致流程停滞。
+- 支持 `start` 调用 `launch-gba.sh --background`，复用现有 X11、800x480 和 3x 缩放逻辑。
+- 支持 `restart` 先停止再启动，用于验证反复进入游戏是否稳定。
+
+用法：
+
+```bash
+bash ~/rk3566_gba/scripts/gba-session.sh status
+bash ~/rk3566_gba/scripts/gba-session.sh stop
+bash ~/rk3566_gba/scripts/gba-session.sh start /home/radxa/roms/gba/pokemon-green.gba
+bash ~/rk3566_gba/scripts/gba-session.sh restart /home/radxa/roms/gba/pokemon-green.gba
+```
+
+验证：
+
+- 执行 `gba-session.sh stop` 后，脚本向 `mgba-qt` 发送 `SIGTERM`。
+- mGBA 在 `0s` 内正常退出。
+- `status` 显示 `mgba-qt` 不再运行。
+- HDMI 仍保持 `HDMI-1 connected primary 800x480+0+0`。
+- `start` 和 `restart` 后游戏可正常恢复。
+- 重启后音频正常。
+- 手柄映射脚本不需要重新启动。
+- `/tmp/rk3566-gba-mgba.log not found` 仅表示最近 mGBA 日志不存在，不影响退出流程判断。
+
+结论：
+
+- GBA 退出、启动和重启流程通过。
+- 下一步可以继续推进一键掌机模式或开机自启动验证。
