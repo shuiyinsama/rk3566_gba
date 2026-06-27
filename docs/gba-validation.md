@@ -188,7 +188,54 @@ bash ~/rk3566_gba/scripts/gba-session.sh restart /home/radxa/roms/gba/pokemon-gr
 
 这一步通过后，才适合继续做开机自启动或一键掌机模式。
 
-## 9. 判断标准
+## 9. 一键掌机模式
+
+一键掌机模式用于把当前已经验证过的步骤串起来：
+
+1. 自动寻找 USB 手柄 event 设备。
+2. 启动 `gamepad-keyboard-bridge.py`，创建虚拟键盘。
+3. 调用 `gba-session.sh start`，切换 HDMI 到 800x480 并启动 mGBA。
+4. 用同一个入口查看状态、停止或重启。
+
+启动：
+
+```bash
+bash ~/rk3566_gba/scripts/gba-handheld.sh start /home/radxa/roms/gba/pokemon-green.gba
+```
+
+查看状态：
+
+```bash
+bash ~/rk3566_gba/scripts/gba-handheld.sh status
+```
+
+停止：
+
+```bash
+bash ~/rk3566_gba/scripts/gba-handheld.sh stop
+```
+
+如果自动识别手柄失败，可以显式指定：
+
+```bash
+bash ~/rk3566_gba/scripts/gba-handheld.sh start --event /dev/input/event3 /home/radxa/roms/gba/pokemon-green.gba
+```
+
+手柄的 `/dev/input/eventX` 编号不是固定的。脚本会优先读取 `/dev/input/by-id/*event-joystick`，这个稳定别名会跟随当前真实 event 编号。排查时运行：
+
+```bash
+bash ~/rk3566_gba/scripts/gba-handheld.sh --list-gamepads
+```
+
+如果 A/B 体感相反：
+
+```bash
+bash ~/rk3566_gba/scripts/gba-handheld.sh restart --swap-ab /home/radxa/roms/gba/pokemon-green.gba
+```
+
+这一步通过后，再考虑把 `gba-handheld.sh start ...` 做成 systemd 用户服务或桌面自启动项。
+
+## 10. 判断标准
 
 通过标准：
 
@@ -200,7 +247,7 @@ bash ~/rk3566_gba/scripts/gba-session.sh restart /home/radxa/roms/gba/pokemon-gr
 
 未通过时优先记录现象，不急着同时更换多个变量。建议一次只调整模拟器、音频路径、缩放方式或散热条件中的一项。
 
-## 10. 通过后的下一步
+## 11. 通过后的下一步
 
 GBA 首轮通过后，再继续：
 
@@ -210,7 +257,7 @@ GBA 首轮通过后，再继续：
 4. 评估 PSP 的可玩边界。
 5. 根据温度和输入体验决定是否进入成品形态定义。
 
-## 11. 首轮记录
+## 12. 首轮记录
 
 | 项目 | 记录 |
 | --- | --- |
@@ -235,7 +282,7 @@ GBA 首轮通过后，再继续：
 | 板端 CSV 日志 | 待补充 |
 | 结论 | mGBA Qt 已成功出画面，GBA 运行路线可行；仍需继续做 30 分钟稳定性、输入、音频和掌机化启动验证。 |
 
-## 12. 30 分钟稳定性记录
+## 13. 30 分钟稳定性记录
 
 | 项目 | 记录 |
 | --- | --- |
@@ -266,7 +313,7 @@ GBA 首轮通过后，再继续：
 | 板端 CSV 日志 | `logs/gba-stability-20260625-120633.csv`，板端原路径 `/home/radxa/rk3566_gba/logs/gba-stability-20260625-120633.csv` |
 | 结论 | GBA 模拟器 30 分钟稳定性基线通过；未出现崩溃、分辨率回退或持续升温。下一轮应验证输入、音频和退出/重启体验。 |
 
-## 13. USB 手柄输入记录
+## 14. USB 手柄输入记录
 
 | 项目 | 记录 |
 | --- | --- |
@@ -282,7 +329,7 @@ GBA 首轮通过后，再继续：
 | 注意事项 | 如果 Xbox 灯不亮或按键无输出，先重新确认 USB 有线连接和 `evtest /dev/input/event3` 是否仍有事件 |
 | 结论 | 输入验证通过，但当前依赖用户层 evdev 到键盘映射；后续掌机化阶段需要把该映射做成更稳定的启动流程或替换为更合适的输入后端。 |
 
-## 14. 音频验证记录
+## 15. 音频验证记录
 
 | 项目 | 记录 |
 | --- | --- |
@@ -299,7 +346,7 @@ GBA 首轮通过后，再继续：
 | 已知问题 | 底噪偏大，当前阶段先记录，不展开优化 |
 | 结论 | GBA 音频链路基本通过；后续成品化阶段再优化底噪、音量路径和默认输出选择。 |
 
-## 15. 退出/重启流程记录
+## 16. 退出/重启流程记录
 
 | 项目 | 记录 |
 | --- | --- |

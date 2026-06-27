@@ -375,3 +375,35 @@ bash ~/rk3566_gba/scripts/gba-session.sh restart /home/radxa/roms/gba/pokemon-gr
 
 - GBA 退出、启动和重启流程通过。
 - 下一步可以继续推进一键掌机模式或开机自启动验证。
+
+### 一键掌机模式脚本
+
+目的：把当前分散的手动步骤合并成一个用户层入口，先手动验证“掌机模式”，再考虑开机自启动。
+
+变更：
+
+- 新增 `scripts/gba-handheld.sh`。
+- `start` 会自动寻找 Xbox/Controller/Gamepad 类输入设备，并启动 `gamepad-keyboard-bridge.py`。
+- `start` 会继续调用 `gba-session.sh start`，复用 800x480、X11 环境和 mGBA 后台启动逻辑。
+- `status` 同时显示手柄映射进程和 mGBA 状态。
+- `stop` 会停止 mGBA，并停止由本脚本启动的手柄映射进程。
+- `restart` 会按顺序停止再启动，验证重复进入掌机模式是否可靠。
+- 支持 `--event` 显式指定手柄事件设备。
+- 支持 `--swap-ab` 调换 A/B 体感。
+- 自动识别手柄时优先使用 `/dev/input/by-id/*event-joystick`，避免拔插或上电顺序导致 `/dev/input/eventX` 编号变化。
+- 新增 `--list-gamepads`，用于查看自动选择结果、by-id 链接和 `/proc/bus/input/devices` 中的手柄候选。
+
+用法：
+
+```bash
+bash ~/rk3566_gba/scripts/gba-handheld.sh start /home/radxa/roms/gba/pokemon-green.gba
+bash ~/rk3566_gba/scripts/gba-handheld.sh status
+bash ~/rk3566_gba/scripts/gba-handheld.sh stop
+```
+
+验证：
+
+- 当前 Xbox 手柄的稳定链接为 `/dev/input/by-id/usb-Microsoft_Controller_3039373030353033383235343435-event-joystick`。
+- 该链接当前指向 `/dev/input/event3`。
+- `gba-handheld.sh --list-gamepads` 可显示自动选择结果和手柄候选。
+- `gba-handheld.sh status` 可显示当前自动识别到的手柄 event。

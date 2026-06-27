@@ -89,6 +89,20 @@ bash ~/rk3566_gba/scripts/gba-session.sh start /home/radxa/roms/gba/pokemon-gree
 bash ~/rk3566_gba/scripts/gba-session.sh restart /home/radxa/roms/gba/pokemon-green.gba
 ```
 
+一键掌机模式会把手柄映射和 mGBA 启动合在一起：
+
+```bash
+bash ~/rk3566_gba/scripts/gba-handheld.sh start /home/radxa/roms/gba/pokemon-green.gba
+bash ~/rk3566_gba/scripts/gba-handheld.sh status
+bash ~/rk3566_gba/scripts/gba-handheld.sh stop
+```
+
+手柄的 `/dev/input/eventX` 编号可能会变化，脚本会优先使用 `/dev/input/by-id/*event-joystick` 自动定位。需要排查时运行：
+
+```bash
+bash ~/rk3566_gba/scripts/gba-handheld.sh --list-gamepads
+```
+
 ## 文档
 
 - [RK3566 多模拟器掌机阶段方案](docs/hardware-selection.md)
